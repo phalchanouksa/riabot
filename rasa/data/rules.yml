@@ -1,0 +1,38 @@
+version: "3.1"
+
+rules:
+  # ===== GREETING RULE =====
+  - rule: Say hello
+    steps:
+      - intent: greet
+      - action: utter_greet
+
+  # ===== GOODBYE RULE =====
+  - rule: Say goodbye
+    steps:
+      - intent: goodbye
+      - action: utter_goodbye
+
+  # ===== HELP RULE =====
+  - rule: Show help
+    steps:
+      - intent: ask_help
+      - action: utter_help
+
+  # ===== FALLBACK RULE =====
+  - rule: Ask the user to rephrase on fallback
+    steps:
+      - intent: nlu_fallback
+      - action: action_default_fallback
+
+  # ===== FAQ RULE (Angkor University Context) =====
+  - rule: respond to FAQs
+    steps:
+      - intent: faq
+      - action: utter_faq
+
+  # ===== CHITCHAT RULE =====
+  - rule: respond to chitchat natively
+    steps:
+      - intent: chitchat
+      - action: utter_chitchat

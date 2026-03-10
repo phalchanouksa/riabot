@@ -1,0 +1,461 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="km">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test AI Model - ML Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'ml_engine/css/style.css' %}">
+    <style>
+        .question-card {
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .question-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .question-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .rating-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .rating-btn {
+            padding: 10px 16px;
+            border: 1px solid #e0e0e0;
+            background: #ffffff;
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--font-family);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .rating-btn:hover {
+            border-color: var(--accent-color);
+            background-color: var(--accent-bg);
+        }
+
+        .rating-btn.selected {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .result-card {
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            display: none;
+        }
+
+        .result-card.show {
+            display: block;
+        }
+
+        .result-major {
+            font-size: 32px;
+            font-weight: 500;
+            color: var(--accent-color);
+            margin: 16px 0;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            background-color: var(--surface-color);
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .top-3-list {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .top-3-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .top-3-item:last-child {
+            border-bottom: none;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-spinner.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid var(--surface-color);
+            border-top: 3px solid var(--accent-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="header-title">
+            <span class="material-icons-outlined sparkle-icon">auto_awesome</span>
+            <span>ML Engine - Test Model</span>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="card">
+                <h2 class="card-title">Test Progress</h2>
+                <div class="metric-row">
+                    <span class="metric-label">Question</span>
+                    <span class="metric-value"><span id="current-q">0</span> of <span id="total-q">?</span></span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progress"></div>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Stage</span>
+                    <span class="metric-value" id="stage-text">Loading...</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Actions</h2>
+                <button class="btn-primary" onclick="checkConfidence()" style="display:none;" id="check-btn">
+                    <span class="material-icons-outlined">check</span>
+                    Submit Answer
+                </button>
+                <button class="btn-primary" onclick="resetTest()" style="display:none;" id="reset-btn">
+                    <span class="material-icons-outlined">restart_alt</span>
+                    Start Over
+                </button>
+            </div>
+
+            <!-- Live AI Stats -->
+            <div class="card" id="live-stats" style="display:none;">
+                <h2 class="card-title">🤖 Live AI Stats</h2>
+
+                <div class="metric-row">
+                    <span class="metric-label">Current Confidence</span>
+                    <span class="metric-value" id="live-confidence">-</span>
+                </div>
+
+                <div class="metric-row">
+                    <span class="metric-label">Uncertainty</span>
+                    <span class="metric-value" id="live-uncertainty">-</span>
+                </div>
+
+                <div class="metric-row">
+                    <span class="metric-label">Categories Covered</span>
+                    <span class="metric-value" id="live-categories">0/16</span>
+                </div>
+
+                <div style="margin-top: 12px;">
+                    <div style="font-size: 12px; font-weight: 500; margin-bottom: 8px;">Top 3 Predictions:</div>
+                    <div id="live-top3" style="font-size: 11px; color: var(--text-secondary);"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Area -->
+        <div class="console-area">
+            <div class="console-header">
+                <h2 class="card-title">Adaptive Career Test</h2>
+            </div>
+
+            <div id="question-container" style="overflow-y: auto; flex: 1;"></div>
+
+            <div class="loading-spinner" id="loading">
+                <div class="spinner"></div>
+                <p style="color: var(--text-secondary);">Processing...</p>
+            </div>
+
+            <div class="result-card" id="results">
+                <span class="material-icons-outlined"
+                    style="font-size: 48px; color: var(--success-color);">check_circle</span>
+                <h2 style="margin: 16px 0;">Recommendation Ready!</h2>
+                <div class="result-major" id="recommended-major">-</div>
+
+                <div class="result-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">Confidence</div>
+                        <div class="stat-value" id="confidence">0%</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Questions Asked</div>
+                        <div class="stat-value" id="q-asked">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Time Saved</div>
+                        <div class="stat-value" id="time-saved">0%</div>
+                    </div>
+                </div>
+
+                <div class="top-3-list">
+                    <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 500;">Top 3 Recommendations</h3>
+                    <div id="top-3-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let questions = [];
+        let answers = {};
+        let currentQuestionIndex = 0;
+
+        async function startAdaptiveTest() {
+            showLoading(true);
+            try {
+                const response = await fetch('/api/ml/adaptive/start/');
+                const data = await response.json();
+
+                questions = data.questions;
+                answers = {};
+                currentQuestionIndex = 0;
+
+                document.getElementById('total-q').textContent = questions.length;
+                document.getElementById('stage-text').textContent = 'Profiling';
+
+                await loadQuestion();
+                showLoading(false);
+            } catch (error) {
+                alert('Error loading questions: ' + error.message);
+                showLoading(false);
+            }
+        }
+
+        async function loadQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                await checkConfidence();
+                return;
+            }
+
+            const questionId = questions[currentQuestionIndex];
+
+            try {
+                const response = await fetch(`/api/ml/question/${questionId}/`);
+                const data = await response.json();
+
+                displayQuestion(data);
+                updateProgress();
+            } catch (error) {
+                alert('Error loading question: ' + error.message);
+            }
+        }
+
+        function displayQuestion(questionData) {
+            const container = document.getElementById('question-container');
+            const isInterest = questionData.index < 96;
+            const scale = isInterest ? [1, 2, 3, 4] : [0, 1, 2, 3];
+            const labels = isInterest
+                ? ['អត់ចូលចិត្ត', 'ចូលចិត្តតិចៗ', 'ចូលចិត្តល្មម', 'ចូលចិត្តខ្លាំង']
+                : ['គ្មានជំនាញ', 'ជំនាញតិចៗ', 'ជំនាញបង្គួរ', 'ជំនាញខ្លាំង'];
+
+            container.innerHTML = `
+                <div class="question-card">
+                    <div class="question-text">${questionData.text}</div>
+                    <div class="question-meta">${questionData.type === 'interest' ? 'ចំណាប់អារម្មណ៍' : 'ជំនាញ'} - ${questionData.category_name}</div>
+                    <div class="rating-buttons">
+                        ${scale.map((val, idx) => `
+                            <button class="rating-btn" onclick="selectRating(${val})" data-value="${val}">
+                                ${val} - ${labels[idx]}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('check-btn').style.display = 'none';
+        }
+
+        function selectRating(value) {
+            document.querySelectorAll('.rating-btn').forEach(btn => btn.classList.remove('selected'));
+            event.target.classList.add('selected');
+
+            const questionId = questions[currentQuestionIndex];
+            answers[questionId] = value;
+
+            document.getElementById('check-btn').style.display = 'flex';
+        }
+
+        function updateProgress() {
+            const current = currentQuestionIndex + 1;
+            const total = questions.length;
+            const percentage = (current / total) * 100;
+
+            document.getElementById('current-q').textContent = current;
+            document.getElementById('progress').style.width = percentage + '%';
+        }
+
+        async function checkConfidence() {
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/ml/adaptive/predict/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answers: answers })
+                });
+
+                const result = await response.json();
+
+                // Update live stats
+                updateLiveStats(result);
+
+                if (result.should_continue && currentQuestionIndex < questions.length - 1) {
+                    currentQuestionIndex++;
+                    await loadQuestion();
+                    showLoading(false);
+                    document.getElementById('stage-text').textContent = result.stage || 'Testing';
+                } else {
+                    showResults(result);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                showLoading(false);
+            }
+        }
+
+        function updateLiveStats(result) {
+            // Show the live stats panel
+            document.getElementById('live-stats').style.display = 'block';
+
+            // Update confidence
+            const confidencePercent = (result.confidence * 100).toFixed(0);
+            document.getElementById('live-confidence').textContent = confidencePercent + '%';
+
+            // Update uncertainty
+            const uncertaintyPercent = (result.uncertainty * 100).toFixed(0);
+            document.getElementById('live-uncertainty').textContent = uncertaintyPercent + '%';
+
+            // Calculate categories covered
+            const categoriesCovered = getCategoriesCovered(Object.keys(answers).map(Number));
+            document.getElementById('live-categories').textContent = `${categoriesCovered.size}/16`;
+
+            // Update top 3
+            const top3Html = result.top_3.map((item, idx) => `
+                ${idx + 1}. ${item.major}: ${(item.confidence * 100).toFixed(0)}%
+            `).join('<br>');
+            document.getElementById('live-top3').innerHTML = top3Html;
+        }
+
+        function getCategoriesCovered(answeredIndices) {
+            const categories = new Set();
+
+            for (const idx of answeredIndices) {
+                let category;
+                if (idx < 96) {
+                    // ch1 (interests): 16 categories × 6 questions
+                    category = Math.floor(idx / 6);
+                } else {
+                    // ch2 (skills): 16 categories × 10 questions
+                    category = Math.floor((idx - 96) / 10);
+                }
+                categories.add(category);
+            }
+
+            return categories;
+        }
+
+        function showResults(result) {
+            showLoading(false);
+            document.getElementById('question-container').style.display = 'none';
+            document.getElementById('check-btn').style.display = 'none';
+            document.getElementById('reset-btn').style.display = 'flex';
+
+            document.getElementById('recommended-major').textContent = result.major;
+            document.getElementById('confidence').textContent = (result.confidence * 100).toFixed(0) + '%';
+            document.getElementById('q-asked').textContent = result.questions_asked;
+            document.getElementById('time-saved').textContent = Math.round((1 - result.questions_asked / 256) * 100) + '%';
+
+            const top3List = document.getElementById('top-3-list');
+            top3List.innerHTML = result.top_3.map((item, idx) => `
+                <div class="top-3-item">
+                    <span>${idx + 1}. ${item.major}</span>
+                    <span style="font-weight: 500;">${(item.confidence * 100).toFixed(0)}%</span>
+                </div>
+            `).join('');
+
+            document.getElementById('results').classList.add('show');
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('show', show);
+        }
+
+        function resetTest() {
+            document.getElementById('results').classList.remove('show');
+            document.getElementById('question-container').style.display = 'block';
+            document.getElementById('reset-btn').style.display = 'none';
+            startAdaptiveTest();
+        }
+
+        window.onload = () => {
+            startAdaptiveTest();
+        };
+    </script>
+</body>
+
+</html>

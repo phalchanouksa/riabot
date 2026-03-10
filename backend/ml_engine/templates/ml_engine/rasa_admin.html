@@ -1,0 +1,349 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversation Dialog Model Training in Rasa</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Noto+Serif+Khmer:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'ml_engine/css/style.css' %}">
+
+    <!-- Ace Code Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/mode-yaml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/theme-dracula.js"></script>
+
+    <style>
+        .editor-layout {
+            display: flex;
+            height: calc(100vh - 80px);
+            /* Fill screen below header */
+            gap: 20px;
+        }
+
+        .file-sidebar {
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .main-editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 0;
+            /* Prevent overflow */
+        }
+
+        #codeEditor {
+            flex: 1;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: 'Consolas', 'Menlo', monospace;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            font-weight: 500;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .file-btn:hover {
+            background: #f1f3f4;
+        }
+
+        .file-btn.active {
+            background: #e8f0fe;
+            color: #1a73e8;
+        }
+
+        .file-btn.active .material-icons-outlined {
+            color: #1a73e8 !important;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: var(--surface-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-green {
+            background-color: #0f9d58;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .btn-green:hover {
+            background-color: #0b8043;
+        }
+
+        #terminalOutput {
+            height: 250px;
+            background: #1e1e1e;
+            color: #00ff00;
+            font-family: 'Consolas', 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-y: auto;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="header-title">
+            <span class="material-icons-outlined sparkle-icon">chat_bubble</span>
+            <span>Conversation Dialog Model Training in Rasa</span>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Sidebar Controls -->
+        <div class="sidebar">
+            <div class="card" style="display: flex; flex-direction: column; gap: 12px; height: 100%;">
+                <h2 class="card-title">Configuration Files</h2>
+
+                <button class="file-btn" onclick="loadFile('nlu')">
+                    <span class="material-icons-outlined" style="color: #4CAF50;">psychology</span>
+                    <div style="text-align: left;">
+                        <div>nlu.yml</div>
+                        <div style="font-size: 11px; opacity: 0.8; font-weight: 400;">Intents & Training data</div>
+                    </div>
+                </button>
+
+                <button class="file-btn" onclick="loadFile('domain')">
+                    <span class="material-icons-outlined" style="color: #F8B400;">format_list_bulleted</span>
+                    <div style="text-align: left;">
+                        <div>domain.yml</div>
+                        <div style="font-size: 11px; opacity: 0.8; font-weight: 400;">Bot responses & vars</div>
+                    </div>
+                </button>
+
+                <button class="file-btn" onclick="loadFile('stories')">
+                    <span class="material-icons-outlined" style="color: #4A90E2;">auto_stories</span>
+                    <div style="text-align: left;">
+                        <div>stories.yml</div>
+                        <div style="font-size: 11px; opacity: 0.8; font-weight: 400;">Conversation flows</div>
+                    </div>
+                </button>
+
+                <button class="file-btn" onclick="loadFile('rules')">
+                    <span class="material-icons-outlined" style="color: #E24A4A;">gavel</span>
+                    <div style="text-align: left;">
+                        <div>rules.yml</div>
+                        <div style="font-size: 11px; opacity: 0.8; font-weight: 400;">Strict bot behaviors</div>
+                    </div>
+                </button>
+
+                <div style="margin-top: auto; padding-top: 16px;">
+                    <a href="/ml/" class="file-btn"
+                        style="text-decoration: none; justify-content: center; background: transparent; border-color: transparent;">
+                        <span class="material-icons-outlined">arrow_back</span>
+                        Back to ML Index
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div
+            style="display: flex; flex-direction: column; flex: 1; gap: 24px; overflow: hidden; height: calc(100vh - 80px);">
+            <!-- Main Editor Area -->
+            <div class="card" style="flex: 1; display: flex; flex-direction: column; padding: 0; overflow: hidden;">
+                <div class="top-bar">
+                    <div style="font-weight: 500; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons-outlined" id="currentFileIcon">psychology</span>
+                        Editing: <span id="currentFileName">None selected</span>
+                    </div>
+
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn-primary"
+                            style="background-color: var(--surface-color); color: var(--accent-color); border: 1px solid var(--accent-color); box-shadow: none;"
+                            onclick="saveFile()">
+                            <span class="material-icons-outlined">save</span>
+                            Save File
+                        </button>
+
+                        <button class="btn-primary" style="box-shadow: none;" onclick="trainModel()">
+                            <span class="material-icons-outlined">rocket_launch</span>
+                            Save & Retrain Rasa
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ace Editor Container -->
+                <div id="codeEditor" style="border-radius: 0; box-shadow: none;"># Please select a file from the sidebar
+                    to start editing.</div>
+            </div>
+
+            <!-- Training Terminal (Hidden until training starts) -->
+            <div id="trainingConsole" class="console-area" style="display: none; height: 300px; flex-shrink: 0;">
+                <div class="console-header">
+                    <h2 class="card-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons-outlined" style="font-size: 18px;">terminal</span>
+                        Live Training Logs
+                    </h2>
+                    <span id="trainingStatusText" class="status-pill"
+                        style="color: #F8B400; background: rgba(248, 180, 0, 0.1);">In Progress...</span>
+                </div>
+                <div class="console-output" id="terminalOutput"
+                    style="font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; color: #00ff00;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Init Ace Editor
+        var editor = ace.edit("codeEditor");
+        editor.setTheme("ace/theme/dracula");
+        editor.session.setMode("ace/mode/yaml");
+        editor.setOptions({
+            fontSize: "14px",
+            showPrintMargin: false,
+            useSoftTabs: true,
+            tabSize: 2,
+            wrap: true
+        });
+
+        let currentFile = null;
+
+        function loadFile(fileType) {
+            // Update UI safely 
+            document.querySelectorAll('.file-btn').forEach(btn => btn.classList.remove('active'));
+
+            // If called from a click event
+            if (window.event && window.event.currentTarget) {
+                window.event.currentTarget.classList.add('active');
+            } else {
+                // If called programmatically (like on page load)
+                const activeBtn = document.querySelector(`.file-btn[onclick="loadFile('${fileType}')"]`);
+                if (activeBtn) activeBtn.classList.add('active');
+            }
+
+            currentFile = fileType;
+            let filename = fileType + ".yml";
+            if (fileType === 'domain') filename = "domain.yml";
+
+            document.getElementById('currentFileName').innerText = filename;
+
+            editor.setValue("Loading file content...");
+
+            // Fetch content from backend
+            fetch(`/api/ml/rasa/file/${fileType}/`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.content) {
+                        editor.setValue(data.content, -1);
+                    } else {
+                        editor.setValue(`# Error loading ${fileType}.yml`);
+                    }
+                })
+                .catch(err => {
+                    editor.setValue(`# Cannot connect to server.`);
+                });
+        }
+
+        function saveFile() {
+            if (!currentFile) {
+                alert("Please select a file to edit first.");
+                return;
+            }
+            const content = editor.getValue();
+            fetch(`/api/ml/rasa/file/${currentFile}/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: content })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('File saved successfully!');
+                    } else {
+                        alert('Error saving: ' + data.error);
+                    }
+                });
+        }
+
+        function trainModel() {
+            if (!currentFile) {
+                alert("Please select a file to edit first.");
+                return;
+            }
+            // Automatically save the currently opened file first
+            const content = editor.getValue();
+            fetch(`/api/ml/rasa/file/${currentFile}/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: content })
+            }).then(() => {
+                // Show terminal
+                document.getElementById('trainingConsole').style.display = 'flex';
+                document.getElementById('terminalOutput').innerHTML = "Initializing Rasa Training Engine... Please wait.\n";
+                document.getElementById('trainingStatusText').innerText = "In Progress...";
+                document.getElementById('trainingStatusText').style.color = "#F8B400";
+
+                // Trigger API
+                fetch('/api/ml/rasa/train/', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+
+                        // Start polling
+                        if (trainingInterval) clearInterval(trainingInterval);
+                        trainingInterval = setInterval(pollTrainingStatus, 1500);
+                    });
+            });
+        }
+
+        function pollTrainingStatus() {
+            fetch('/api/ml/rasa/train/')
+                .then(res => res.json())
+                .then(data => {
+                    const terminal = document.getElementById('terminalOutput');
+                    terminal.innerHTML = data.logs.join('<br>') + '<br>';
+                    terminal.scrollTop = terminal.scrollHeight; // Auto scroll to bottom
+
+                    if (!data.is_training) {
+                        clearInterval(trainingInterval);
+                        document.getElementById('trainingStatusText').innerText = "Complete!";
+                        document.getElementById('trainingStatusText').style.color = "#4CAF50";
+                        alert("Training complete and model loaded! The bot is now using the newest data.");
+                    }
+                });
+        }
+    </script>
+</body>
+
+</html>

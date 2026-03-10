@@ -1,0 +1,23 @@
+# Rasa Endpoints - Service connections
+
+# Custom action server (handles ML predictions, Qwen LLM, etc.)
+action_endpoint:
+  url: "http://localhost:5055/webhook"
+
+# Tracker store (Memory Persistence):
+# Using SQLite. This prevents "Amnesia" when server restarts 
+# and safely isolates concurrent tests to a local .db file.
+tracker_store:
+  type: SQL
+  dialect: sqlite
+  db: rasa_tracker.db
+
+# For large-scale production, you can switch the above to PostgreSQL:
+# tracker_store:
+#   type: SQL
+#   dialect: "postgresql"
+#   url: "db"
+#   port: 5432
+#   username: "postgres"
+#   password: "your-password"
+#   db: "riabot-rasa"

@@ -1,0 +1,105 @@
+version: "3.1"
+
+stories:
+  # ===== GREETING → SURVEY START =====
+  - story: greet and start survey
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: start_survey
+      - action: action_start_survey
+      - action: action_ask_next_question
+
+  # ===== DIRECT SURVEY START =====
+  - story: direct start survey
+    steps:
+      - intent: start_survey
+      - action: action_start_survey
+      - action: action_ask_next_question
+
+  # ===== SURVEY ANSWER LOOP =====
+  - story: answer and continue survey
+    steps:
+      - intent: answer_question
+      - action: action_process_answer
+      - action: action_ask_next_question
+
+  # ===== SURVEY ANSWER → RESULTS (when confident) =====
+  - story: answer and show results
+    steps:
+      - intent: answer_question
+      - action: action_process_answer
+      - action: action_show_results
+
+  # ===== AFFIRM DURING SURVEY =====
+  - story: affirm to continue survey
+    steps:
+      - intent: affirm
+        entities: []
+      - action: action_ask_next_question
+
+  # ===== ASK FOR EXPLANATION =====
+  - story: ask explain recommendation
+    steps:
+      - intent: ask_explain
+      - action: action_explain_recommendation
+
+  # ===== SHOW RESULTS =====
+  - story: show results
+    steps:
+      - intent: show_results
+      - action: action_show_results
+
+  # ===== STOP SURVEY =====
+  - story: stop survey
+    steps:
+      - intent: stop_survey
+      - action: action_stop_survey
+
+  # ===== DENY DURING SURVEY =====
+  - story: deny to stop survey
+    steps:
+      - intent: deny
+      - action: action_stop_survey
+
+  # ===== MOOD GREAT =====
+  - story: user happy
+    steps:
+      - intent: mood_great
+      - action: action_fallback_chat
+  # ===== MOOD UNHAPPY → ENCOURAGE =====
+  - story: user unhappy encourage
+    steps:
+      - intent: mood_unhappy
+      - action: action_fallback_chat
+  # ===== OUT OF SCOPE → FALLBACK =====
+  - story: out of scope question
+    steps:
+      - intent: out_of_scope
+      - action: action_fallback_chat
+  # ===== ASK ABOUT MAJOR =====
+  - story: ask about a specific major
+    steps:
+      - intent: ask_about_major
+      - action: action_fallback_chat
+  # ===== FULL SURVEY FLOW =====
+  - story: complete survey flow happy path
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: start_survey
+      - action: action_start_survey
+      - action: action_ask_next_question
+      - intent: answer_question
+      - action: action_process_answer
+      - action: action_ask_next_question
+      - intent: answer_question
+      - action: action_process_answer
+      - action: action_ask_next_question
+      - intent: answer_question
+      - action: action_process_answer
+      - action: action_show_results
+      - intent: ask_explain
+      - action: action_explain_recommendation
+      - intent: goodbye
+      - action: utter_goodbye

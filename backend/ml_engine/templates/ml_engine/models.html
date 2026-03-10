@@ -1,0 +1,160 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Manager - ML Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'ml_engine/css/style.css' %}">
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="header-title">
+            <span class="material-icons-outlined sparkle-icon">history</span>
+            <span>Model Manager</span>
+        </div>
+        <a href="/ml/tabnet/" class="btn-primary" style="text-decoration: none; margin-right: 24px;">
+            <span class="material-icons-outlined">arrow_back</span>
+            Back to Retrain
+        </a>
+    </div>
+
+    <div class="main-container">
+        <!-- Full Width Column -->
+        <div style="display: flex; flex-direction: column; flex: 1; gap: 24px; overflow: hidden;">
+
+            <!-- Model History Panel -->
+            <div class="card" style="flex: 1; overflow-y: auto; min-height: 300px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2 class="card-title">Model History</h2>
+                    <button class="btn-primary" onclick="loadModelHistory()"
+                        style="padding: 6px 16px; font-size: 13px;">
+                        <span class="material-icons-outlined" style="font-size: 16px;">refresh</span>
+                        Refresh
+                    </button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table id="modelHistoryTable" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #e0e0e0; text-align: left;">
+                                <th style="padding: 8px;">Version</th>
+                                <th style="padding: 8px;">Accuracy</th>
+                                <th style="padding: 8px;">Top-3</th>
+                                <th style="padding: 8px;">Status</th>
+                                <th style="padding: 8px; text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Dataset Management Panel -->
+            <div class="card" style="flex: 1; overflow-y: auto; min-height: 300px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2 class="card-title">Training Datasets</h2>
+                    <button class="btn-primary" onclick="loadDatasets()" style="padding: 6px 16px; font-size: 13px;">
+                        <span class="material-icons-outlined" style="font-size: 16px;">refresh</span>
+                        Refresh
+                    </button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table id="datasetsTable" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #e0e0e0; text-align: left;">
+                                <th style="padding: 8px;">Filename</th>
+                                <th style="padding: 8px;">Size</th>
+                                <th style="padding: 8px;">Modified</th>
+                                <th style="padding: 8px;">Rows</th>
+                                <th style="padding: 8px; text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Dataset Details Modal -->
+    <div id="datasetModal" class="modal"
+        style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+        <div class="modal-content"
+            style="background-color: #fefefe; margin: 5% auto; padding: 24px; border: 1px solid #888; width: 80%; max-width: 700px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 id="datasetModalTitle" class="card-title" style="margin: 0;">Dataset Details</h2>
+                <span class="close" onclick="closeDatasetModal()"
+                    style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+            </div>
+
+            <div id="datasetModalContent" style="font-size: 14px;">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Modal -->
+    <div id="detailsModal" class="modal"
+        style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+        <div class="modal-content"
+            style="background-color: #fefefe; margin: 5% auto; padding: 24px; border: 1px solid #888; width: 80%; max-width: 900px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 id="modalTitle" class="card-title" style="margin: 0;">Model Details</h2>
+                <span class="close" onclick="closeModal()"
+                    style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                <div>
+                    <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 12px; color: var(--text-primary);">
+                        Configuration</h3>
+                    <div id="modalConfig"
+                        style="background: #f8f9fa; padding: 16px; border-radius: 8px; font-size: 14px;">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                <div>
+                    <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 12px; color: var(--text-primary);">
+                        Performance Summary</h3>
+                    <div id="modalSummary"
+                        style="background: #f8f9fa; padding: 16px; border-radius: 8px; font-size: 14px;">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 12px; color: var(--text-primary);">Detailed
+                Classification Report</h3>
+            <div style="overflow-x: auto;">
+                <table id="modalReportTable" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid #e0e0e0; text-align: left;">
+                            <th style="padding: 8px;">Class</th>
+                            <th style="padding: 8px;">Precision</th>
+                            <th style="padding: 8px;">Recall</th>
+                            <th style="padding: 8px;">F1-Score</th>
+                            <th style="padding: 8px;">Support</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'ml_engine/js/model_manager.js' %}"></script>
+</body>
+
+</html>

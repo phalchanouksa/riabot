@@ -1,0 +1,225 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabnet Major Recommendation Model Training</title>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'ml_engine/css/style.css' %}">
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="header-title">
+            <span class="material-icons-outlined sparkle-icon">auto_awesome</span>
+            <span>Tabnet Major Recommendation Model Training</span>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Sidebar Controls -->
+        <div class="sidebar">
+            <div class="card">
+                <h2 class="card-title">Retrain Model</h2>
+                <form id="uploadForm" style="display: flex; flex-direction: column; gap: 16px;">
+                    <div class="file-input-container">
+                        <span class="material-icons-outlined upload-icon">upload_file</span>
+                        <span id="fileNameLabel" class="file-label">Select CSV dataset (optional)</span>
+                        <input type="file" id="fileInput" name="file" accept=".csv" onchange="updateFileName(this)">
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label
+                            style="font-size: 12px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                            <span class="material-icons-outlined" style="font-size: 16px;">science</span>
+                            Synthetic Data Amount
+                            <span class="material-icons-outlined"
+                                style="font-size: 16px; color: var(--text-secondary); cursor: help;"
+                                title="Number of AI-generated training samples to create. More data helps the model learn better patterns. Set to 0 to use only real uploaded data.">info</span>
+                        </label>
+                        <div class="file-input-container">
+                            <input type="number" id="syntheticInput" name="synthetic_count" value="5000" min="0"
+                                max="50000" step="100"
+                                style="border: none; outline: none; width: 100%; font-family: inherit; font-size: 14px; color: var(--text-primary);"
+                                placeholder="e.g., 5000">
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-secondary);">Recommended: 5000-10000
+                            samples</span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label
+                            style="font-size: 12px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                            <span class="material-icons-outlined" style="font-size: 16px;">restart_alt</span>
+                            Max Epochs
+                            <span class="material-icons-outlined"
+                                style="font-size: 16px; color: var(--text-secondary); cursor: help;"
+                                title="Maximum number of complete passes through the training data. More epochs allow the model to learn better, but may take longer.">info</span>
+                        </label>
+                        <div class="file-input-container">
+                            <input type="number" id="epochInput" name="max_epochs" value="20" min="1" max="200" step="1"
+                                style="border: none; outline: none; width: 100%; font-family: inherit; font-size: 14px; color: var(--text-primary);"
+                                placeholder="e.g., 20">
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-secondary);">Recommended: 20-50 epochs</span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label
+                            style="font-size: 12px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                            <span class="material-icons-outlined" style="font-size: 16px;">timer</span>
+                            Patience
+                            <span class="material-icons-outlined"
+                                style="font-size: 16px; color: var(--text-secondary); cursor: help;"
+                                title="Number of epochs to wait for improvement before stopping early. Prevents wasting time when the model stops learning. Lower = stops sooner.">info</span>
+                        </label>
+                        <div class="file-input-container">
+                            <input type="number" id="patienceInput" name="patience" value="5" min="1" max="50" step="1"
+                                style="border: none; outline: none; width: 100%; font-family: inherit; font-size: 14px; color: var(--text-primary);"
+                                placeholder="e.g., 5">
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-secondary);">Recommended: 5-10 epochs</span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label
+                            style="font-size: 12px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                            <span class="material-icons-outlined" style="font-size: 16px;">grid_view</span>
+                            Batch Size
+                            <span class="material-icons-outlined"
+                                style="font-size: 16px; color: var(--text-secondary); cursor: help;"
+                                title="Number of samples processed together in one step. Larger batches train faster but use more memory. Smaller batches may be more accurate.">info</span>
+                        </label>
+                        <div class="file-input-container">
+                            <input type="number" id="batchSizeInput" name="batch_size" value="256" min="32" max="1024"
+                                step="32"
+                                style="border: none; outline: none; width: 100%; font-family: inherit; font-size: 14px; color: var(--text-primary);"
+                                placeholder="e.g., 256">
+                        </div>
+                        <span style="font-size: 11px; color: var(--text-secondary);">Recommended: 128-512</span>
+                    </div>
+
+                    <button type="submit" id="trainBtn" class="btn-primary">
+                        <span class="material-icons-outlined">refresh</span>
+                        Start Retraining
+                    </button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Status</h2>
+                <div class="metric-row">
+                    <span class="metric-label">Current State</span>
+                    <span id="statusPill" class="status-pill">
+                        <span class="material-icons-outlined" style="font-size: 16px;">check_circle</span>
+                        Ready
+                    </span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="metric-row">
+                        <span class="metric-label">Progress</span>
+                        <span id="epochValue" class="metric-value">--</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div id="progressBar" class="progress-bar-fill"></div>
+                    </div>
+                </div>
+
+                <div style="height: 1px; background-color: #e0e0e0; margin: 8px 0;"></div>
+
+                <div class="metric-row">
+                    <span class="metric-label">Loss</span>
+                    <span id="lossValue" class="metric-value">--</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Accuracy</span>
+                    <span id="accuracyValue" class="metric-value">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div style="display: flex; flex-direction: column; flex: 1; gap: 24px; overflow: hidden;">
+
+            <!-- Evaluation Panel (Hidden by default) -->
+            <div id="evalPanel" class="card" style="display: none; flex: 1; overflow-y: auto; min-height: 300px;">
+                <h2 class="card-title">Evaluation Results</h2>
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div class="metric-box">
+                        <div class="metric-label">Test Accuracy</div>
+                        <div id="evalTestAcc" class="metric-value-large">--</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Top-3 Accuracy</div>
+                        <div id="evalTop3" class="metric-value-large">--</div>
+                    </div>
+                </div>
+
+                <h3 class="card-title" style="font-size: 14px; margin-bottom: 12px;">Classification Report</h3>
+                <div style="overflow-x: auto;">
+                    <table id="classReportTable" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #e0e0e0; text-align: left;">
+                                <th style="padding: 8px;">Class</th>
+                                <th style="padding: 8px;">Precision</th>
+                                <th style="padding: 8px;">Recall</th>
+                                <th style="padding: 8px;">F1-Score</th>
+                                <th style="padding: 8px;">Support</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Model Manager Link -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 class="card-title" style="margin-bottom: 4px;">More Tools</h2>
+                        <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Access Model Manager to
+                            view historical training runs and manage datasets.</p>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <a href="/ml/" class="btn-primary"
+                            style="text-decoration: none; background: transparent; color: var(--accent-color); border: 1px solid transparent; box-shadow: none;">
+                            <span class="material-icons-outlined">arrow_back</span>
+                            Back to Index
+                        </a>
+                        <a href="/ml/manager/" class="btn-primary"
+                            style="text-decoration: none; background: var(--surface-color); color: var(--accent-color); border: 1px solid var(--accent-color); box-shadow: none;">
+                            <span class="material-icons-outlined">history</span>
+                            Model Manager
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Console Output -->
+            <div class="console-area" style="flex: 1;">
+                <div class="console-header">
+                    <h2 class="card-title">Activity Log</h2>
+                    <button class="clear-btn" onclick="clearLogs()" title="Clear history">
+                        <span class="material-icons-outlined">block</span>
+                    </button>
+                </div>
+                <div class="console-output" id="consoleOutput">
+                    <div class="log-bubble system">
+                        Welcome to ML Engine. Ready to process data.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'ml_engine/js/dashboard.js' %}"></script>
+</body>
+
+</html>
