@@ -23,6 +23,15 @@ Follow these simple instructions to run the project on a fresh machine.
 - **Python 3.10.11** installed
 - **Node.js 22.18.0** installed
 - **PostgreSQL Database**
+- **Redis Server** (For Celery Task Queue)
+
+### Environment Variables Setup
+Before starting the servers, create a `.env` file in the root of the project (you can copy `.env.example` as a template). 
+You will need to generate secure keys for `SECRET_KEY` (Django) and `RASA_TOKEN_SECRET` (Rasa). Run this command twice to generate two separate keys:
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+Place them in your `.env` file along with your database credentials.
 
 ### 1. Backend (Django)
 Open a terminal and set up the Django Backend:
