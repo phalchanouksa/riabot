@@ -104,7 +104,8 @@ const ChatInterface = () => {
           setTimeout(() => {
             const botMessage = {
               id: Date.now() + index + 1,
-              content: botResponse.text || botResponse.custom || '', // fallback to custom payload if text is missing
+              content: botResponse.text || '',
+              custom: botResponse.custom || null,
               buttons: botResponse.buttons || null, // Capture payload buttons
               type: 'bot',
               timestamp: new Date(),

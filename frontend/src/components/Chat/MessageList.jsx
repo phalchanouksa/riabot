@@ -3,6 +3,7 @@ import TypingEffect from './TypingEffect';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
+import RadarChart from './RadarChart';
 
 const MessageList = ({ messages, loading, onButtonSubmit }) => {
   const [animatedMessages, setAnimatedMessages] = useState(new Set());
@@ -44,6 +45,9 @@ const MessageList = ({ messages, loading, onButtonSubmit }) => {
               <ReactMarkdown>{message.content}</ReactMarkdown>
             )
           }
+          {message.custom && message.custom.type === 'radar_chart' && message.custom.data && (
+            <RadarChart data={message.custom.data} />
+          )}
           {message.buttons && message.buttons.length > 0 && (
             <div className="message-buttons" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {message.buttons.map((btn, i) => (

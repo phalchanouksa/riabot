@@ -9,6 +9,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'ml_engine/css/style.css' %}">
+    <style>
+        /* Allow page to scroll */
+        body {
+            height: auto !important;
+            min-height: 100vh;
+            overflow: auto !important;
+        }
+
+        .main-container {
+            height: auto !important;
+            overflow: visible !important;
+            flex: none !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -109,34 +123,18 @@
     <div id="detailsModal" class="modal"
         style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
         <div class="modal-content"
-            style="background-color: #fefefe; margin: 5% auto; padding: 24px; border: 1px solid #888; width: 80%; max-width: 900px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                <h2 id="modalTitle" class="card-title" style="margin: 0;">Model Details</h2>
+            style="background-color: #fefefe; margin: 3% auto; padding: 28px; border: 1px solid #ddd; width: 90%; max-width: 960px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 id="modalTitle" class="card-title" style="margin: 0; font-size: 18px;">Model Details</h2>
                 <span class="close" onclick="closeModal()"
-                    style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+                    style="color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-                <div>
-                    <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 12px; color: var(--text-primary);">
-                        Configuration</h3>
-                    <div id="modalConfig"
-                        style="background: #f8f9fa; padding: 16px; border-radius: 8px; font-size: 14px;">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-                <div>
-                    <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 12px; color: var(--text-primary);">
-                        Performance Summary</h3>
-                    <div id="modalSummary"
-                        style="background: #f8f9fa; padding: 16px; border-radius: 8px; font-size: 14px;">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-            </div>
+            <!-- All content populated by JS -->
+            <div id="modalConfig"></div>
+            <div id="modalSummary" style="margin-top: 20px;"></div>
 
-            <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 12px; color: var(--text-primary);">Detailed
-                Classification Report</h3>
+            <h3 style="font-size: 15px; font-weight: 500; margin: 20px 0 10px; color: var(--text-primary);">Classification Report</h3>
             <div style="overflow-x: auto;">
                 <table id="modalReportTable" style="width: 100%; border-collapse: collapse; font-size: 13px;">
                     <thead>
@@ -151,10 +149,18 @@
                     <tbody></tbody>
                 </table>
             </div>
+
+            <h3 style="font-size: 15px; font-weight: 500; margin: 20px 0 10px; color: var(--text-primary);">Confusion Matrix</h3>
+            <div style="overflow-x: auto; margin-top: 10px; padding-bottom: 20px;">
+                <table id="modalConfusionTable" style="border-collapse: collapse; font-size: 12px; text-align: center; width: 100%;">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <script src="{% static 'ml_engine/js/model_manager.js' %}"></script>
+    <script src="{% static 'ml_engine/js/model_manager.js' %}?v=20260325b"></script>
 </body>
 
-</html>
+</html>

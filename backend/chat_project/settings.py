@@ -171,16 +171,8 @@ RASA_TOKEN_SECRET = config('RASA_TOKEN_SECRET', default='rasa-secret')
 # Chat Session Timeout - SEPARATE from JWT authentication
 CHAT_SESSION_TIMEOUT = 60  # 60 minutes for chat conversations only
 
-# Celery Configuration (Task Queue for ML Training)
-CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
-CELERY_TASK_TRACK_STARTED = True  # Track when tasks start running
-CELERY_TASK_TIME_LIMIT = 1800  # Hard kill after 30 minutes
-CELERY_TASK_SOFT_TIME_LIMIT = 1500  # Graceful warning after 25 minutes
+# Background training uses concurrent.futures.ProcessPoolExecutor
+# No Celery / Redis / Docker required.
 
 # Default login URL for @user_passes_test redirects
 LOGIN_URL = '/admin/login/'

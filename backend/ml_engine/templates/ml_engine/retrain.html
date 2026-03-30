@@ -12,6 +12,35 @@
 </head>
 
 <body>
+    <style>
+        /* Override viewport-lock for this page — make it scrollable */
+        body {
+            height: auto !important;
+            min-height: 100vh;
+            overflow: auto !important;
+        }
+        .main-container {
+            overflow: visible !important;
+            flex-wrap: wrap;
+        }
+        /* Right column: stack naturally, no viewport constraint */
+        .main-container > div:last-child {
+            overflow: visible !important;
+            min-height: auto;
+        }
+        /* Give eval panel and terminal sensible min-heights */
+        #evalPanel {
+            min-height: 320px !important;
+            max-height: none !important;
+            overflow-y: auto !important;
+        }
+        .terminal-area {
+            min-height: 350px;
+        }
+        #consoleOutput {
+            min-height: 280px;
+        }
+    </style>
 
     <div class="header">
         <div class="header-title">
@@ -110,14 +139,58 @@
                 </form>
             </div>
 
+            <!-- Major Selection Card -->
+            <div class="card" id="majorSelectionCard">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                    <h2 class="card-title" style="margin:0; display:flex; align-items:center; gap:6px;">
+                        <span class="material-icons-outlined" style="font-size:18px; color:var(--accent-color);">checklist</span>
+                        Majors to Train
+                    </h2>
+                    <span id="majorSelectionCount" style="font-size:12px; color:var(--text-secondary); font-weight:500; background:#f0f4ff; padding:2px 8px; border-radius:12px;">
+                        -- / 16 selected
+                    </span>
+                </div>
+
+                <p style="font-size:12px; color:var(--text-secondary); margin:0 0 12px 0; line-height:1.5;">
+                    Only ticked majors will appear in training and results. Untick majors your university doesn't offer.
+                </p>
+
+                <div id="majorCheckboxes" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+                    <!-- Populated by dashboard.js -->
+                    <div style="color:var(--text-secondary);font-size:13px;">Loading majors...</div>
+                </div>
+
+                <div style="display:flex; gap:8px;">
+                    <button onclick="selectAllMajors()" type="button"
+                        style="flex:1; padding:6px 10px; font-size:12px; border:1px solid var(--accent-color); color:var(--accent-color); background:transparent; border-radius:8px; cursor:pointer; font-family:inherit;">
+                        <span class="material-icons-outlined" style="font-size:14px; vertical-align:middle;">done_all</span>
+                        Select All
+                    </button>
+                    <button onclick="clearAllMajors()" type="button"
+                        style="flex:1; padding:6px 10px; font-size:12px; border:1px solid #e0e0e0; color:var(--text-secondary); background:transparent; border-radius:8px; cursor:pointer; font-family:inherit;">
+                        <span class="material-icons-outlined" style="font-size:14px; vertical-align:middle;">remove_done</span>
+                        Clear All
+                    </button>
+                </div>
+            </div>
+
             <div class="card">
                 <h2 class="card-title">Status</h2>
                 <div class="metric-row">
                     <span class="metric-label">Current State</span>
-                    <span id="statusPill" class="status-pill">
-                        <span class="material-icons-outlined" style="font-size: 16px;">check_circle</span>
-                        Ready
-                    </span>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span id="statusPill" class="status-pill">
+                            <span class="material-icons-outlined" style="font-size: 16px;">check_circle</span>
+                            Ready
+                        </span>
+                        <button id="stopBtn" onclick="stopTraining()" type="button"
+                            style="display:none; padding:5px 14px; font-size:12px; font-family:inherit; font-weight:500;
+                                   border:1.5px solid #b3261e; color:#b3261e; background:transparent;
+                                   border-radius:100px; cursor:pointer;">
+                            <span class="material-icons-outlined" style="font-size:14px; vertical-align:middle;">stop_circle</span>
+                            Stop
+                        </button>
+                    </div>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -144,7 +217,23 @@
         </div>
 
         <!-- Right Column -->
-        <div style="display: flex; flex-direction: column; flex: 1; gap: 24px; overflow: hidden;">
+        <div style="display: flex; flex-direction: column; flex: 1; gap: 24px;">
+
+            <!-- Navigation Links -->
+            <div class="card" style="padding: 12px 20px;">
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <a href="/ml/" class="btn-primary"
+                        style="text-decoration: none; background: transparent; color: var(--accent-color); border: 1px solid transparent; box-shadow: none;">
+                        <span class="material-icons-outlined">arrow_back</span>
+                        Back to Index
+                    </a>
+                    <a href="/ml/manager/" class="btn-primary"
+                        style="text-decoration: none; background: var(--surface-color); color: var(--accent-color); border: 1px solid var(--accent-color); box-shadow: none;">
+                        <span class="material-icons-outlined">history</span>
+                        Model Manager
+                    </a>
+                </div>
+            </div>
 
             <!-- Evaluation Panel (Hidden by default) -->
             <div id="evalPanel" class="card" style="display: none; flex: 1; overflow-y: auto; min-height: 300px;">
@@ -179,41 +268,32 @@
                 </div>
             </div>
 
-            <!-- Model Manager Link -->
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h2 class="card-title" style="margin-bottom: 4px;">More Tools</h2>
-                        <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Access Model Manager to
-                            view historical training runs and manage datasets.</p>
-                    </div>
-                    <div style="display: flex; gap: 12px;">
-                        <a href="/ml/" class="btn-primary"
-                            style="text-decoration: none; background: transparent; color: var(--accent-color); border: 1px solid transparent; box-shadow: none;">
-                            <span class="material-icons-outlined">arrow_back</span>
-                            Back to Index
-                        </a>
-                        <a href="/ml/manager/" class="btn-primary"
-                            style="text-decoration: none; background: var(--surface-color); color: var(--accent-color); border: 1px solid var(--accent-color); box-shadow: none;">
-                            <span class="material-icons-outlined">history</span>
-                            Model Manager
-                        </a>
+            <!-- Terminal Output -->
+            <div class="terminal-area" style="flex: 1; display:flex; flex-direction:column; overflow:hidden;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 16px; background:#252526; border-radius:14px 14px 0 0;">
+                    <span style="color:#888; font-size:13px; font-family:'Roboto Mono',monospace;">
+                        <span class="material-icons-outlined" style="font-size:14px; vertical-align:middle; margin-right:4px;">terminal</span>
+                        Training Log
+                    </span>
+                    <div style="display:flex; gap:4px;">
+                        <button onclick="copyLogs()" title="Copy logs" style="background:none;border:none;color:#888;cursor:pointer;padding:4px;">
+                            <span class="material-icons-outlined" style="font-size:16px;">content_copy</span>
+                        </button>
+                        <button onclick="clearLogs()" title="Clear" style="background:none;border:none;color:#888;cursor:pointer;padding:4px;">
+                            <span class="material-icons-outlined" style="font-size:16px;">delete_sweep</span>
+                        </button>
                     </div>
                 </div>
-            </div>
-
-            <!-- Console Output -->
-            <div class="console-area" style="flex: 1;">
-                <div class="console-header">
-                    <h2 class="card-title">Activity Log</h2>
-                    <button class="clear-btn" onclick="clearLogs()" title="Clear history">
-                        <span class="material-icons-outlined">block</span>
-                    </button>
-                </div>
-                <div class="console-output" id="consoleOutput">
-                    <div class="log-bubble system">
-                        Welcome to ML Engine. Ready to process data.
-                    </div>
+                <div id="consoleOutput" style="
+                    flex:1; overflow-y:auto; overflow-x:hidden;
+                    background:#1e1e1e; color:#d4d4d4;
+                    font-family:'Roboto Mono','Consolas','Courier New',monospace;
+                    font-size:12.5px; line-height:1.7;
+                    padding:12px 16px;
+                    border-radius:0 0 14px 14px;
+                    white-space:pre-wrap; word-break:break-word;
+                ">
+                    <span style="color:#569cd6;">$</span> <span style="color:#6a9955;">Ready. Click "Start Retraining" to begin.</span>
                 </div>
             </div>
         </div>

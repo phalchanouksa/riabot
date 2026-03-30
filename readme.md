@@ -23,7 +23,8 @@ Follow these simple instructions to run the project on a fresh machine.
 - **Python 3.10.11** installed
 - **Node.js 22.18.0** installed
 - **PostgreSQL Database**
-- **Redis Server** (For Celery Task Queue)
+- **Redis Server** (Required for Celery Task Queue)
+  - If you have Docker, run: `docker run -d -p 6379:6379 redis`
 
 ### Environment Variables Setup
 Before starting the servers, create a `.env` file in the root of the project (you can copy `.env.example` as a template). 
@@ -31,7 +32,15 @@ You will need to generate secure keys for `SECRET_KEY` (Django) and `RASA_TOKEN_
 ```bash
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
-Place them in your `.env` file along with your database credentials.
+Place them in your `.env` file along with your database credentials and Redis URL:
+```env
+CELERY_BROKER_URL=redis://localhost:6379/0
+```
+
+---
+
+
+## Manual Setup Guide
 
 ### 1. Backend (Django)
 Open a terminal and set up the Django Backend:
@@ -51,6 +60,13 @@ python manage.py createsuperuser
 
 # Start the Backend Server
 python manage.py runserver
+```
+
+### 2. Celery Worker (Background Tasks)
+In the `backend` directory, start the worker to handle ML training:
+```bash
+# Make sure Redis is running first!
+python -m celery -A chat_project worker -l info -P solo
 ```
 
 ### 2. Rasa Server & Actions

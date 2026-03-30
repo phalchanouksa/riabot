@@ -4,15 +4,24 @@ from .views import (
     ModelListView, ModelActionView, AdminModelManagerView,
     AdaptiveStartView, AdaptivePredictView, AdaptiveExplainView,
     QuestionTextView, TestModelView,
-    DatasetListView, DatasetDetailView, DatasetDeleteView
+    DatasetListView, DatasetDetailView, DatasetDeleteView,
+    MajorConfigView, StopTrainingView, MajorMappingAPI,
+    MajorMappingUIView, CareerMappingAPI
 )
 from .views_rasa import RasaAdminView, RasaFileAPI, RasaTrainAPI
 
 urlpatterns = [
     path('predict/', RecommendationAPI.as_view(), name='predict'),
     path('status/', TrainingStatusView.as_view(), name='status'),
+    path('retrain/', AdminRetrainView.as_view(), name='retrain'),   # POST to trigger training
+    path('stop/', StopTrainingView.as_view(), name='stop_training'), # POST to stop training
     path('models/', ModelListView.as_view(), name='model_list'),
     path('models/action/', ModelActionView.as_view(), name='model_action'),
+    
+    # Major config (tick/untick for training)
+    path('major-config/', MajorConfigView.as_view(), name='major_config'),
+    path('mappings/', MajorMappingAPI.as_view(), name='major_mappings'),
+    path('mappings/careers/', CareerMappingAPI.as_view(), name='career_mappings'),
     
     # Adaptive recommendation endpoints
     path('adaptive/start/', AdaptiveStartView.as_view(), name='adaptive_start'),

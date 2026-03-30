@@ -29,25 +29,28 @@ MAJOR_CORRELATIONS = {
 }
 
 
-def generate_base_data(n_samples=5000):
+def generate_base_data(n_samples=5000, enabled_majors=None):
     """
     Generate highly realistic synthetic student data.
     
-    Improvements over previous version:
-    1. Major correlations (related fields get similar scores)
-    2. Interest-skill correlation (high interest → higher skill)
-    3. Realistic within-category variation
-    4. Confused students (20% like multiple majors equally)
-    5. Demographic patterns (gender, background)
-    6. More realistic noise patterns
-    
     Args:
         n_samples: Number of synthetic students to generate
+        enabled_majors: List of enabled major IDs (0-15). If None, uses all 16.
+                        Labels are remapped to 0..len(enabled_majors)-1.
         
     Returns:
         X: Features array of shape (n_samples, 256)
-        y: Labels array of shape (n_samples,)
+        y: Labels array of shape (n_samples,) — remapped to 0..N-1
     """
+    if enabled_majors is None:
+        enabled_majors = list(range(16))
+    
+    enabled_set = set(enabled_majors)
+    n_classes = len(enabled_majors)
+    
+    # Build a remapping: original major ID → new contiguous class index
+    id_to_class = {mid: idx for idx, mid in enumerate(sorted(enabled_majors))}
+    
     X = np.zeros((n_samples, 256), dtype=int)
     y = np.zeros(n_samples, dtype=int)
     
@@ -71,30 +74,27 @@ def generate_base_data(n_samples=5000):
         is_confused = np.random.rand() < 0.20
         
         if is_confused:
-            # Confused student: 2-3 majors with similar high scores
-            num_majors = np.random.randint(2, 4)
-            chosen_majors = np.random.choice(16, size=num_majors, replace=False)
+            # Confused student: 2-3 majors with similar high scores (from enabled only)
+            num_majors = min(np.random.randint(2, 4), n_classes)
+            chosen_majors = list(np.random.choice(enabled_majors, size=num_majors, replace=False))
             primary_major = chosen_majors[0]
-            y[i] = primary_major
+            y[i] = id_to_class[primary_major]
             equal_majors = chosen_majors
         else:
-            # Clear preference: 1 primary, maybe 1 secondary
-            primary_major = np.random.randint(0, 16)
-            y[i] = primary_major
-            
-            # Apply gender bias to major selection
-            if gender in gender_bias and primary_major in gender_bias[gender]:
-                # More likely to choose gender-typical major
-                pass
+            # Clear preference: 1 primary, maybe 1 secondary (from enabled only)
+            primary_major = int(np.random.choice(enabled_majors))
+            y[i] = id_to_class[primary_major]
             
             # 50% have secondary interest
             has_secondary = np.random.rand() < 0.50
             if has_secondary:
-                # Choose related major as secondary (more realistic!)
-                if np.random.rand() < 0.70 and MAJOR_CORRELATIONS[primary_major]:
-                    secondary_major = np.random.choice(MAJOR_CORRELATIONS[primary_major])
+                # Choose related major as secondary (must also be enabled!)
+                correlated = [m for m in MAJOR_CORRELATIONS.get(primary_major, []) if m in enabled_set]
+                if np.random.rand() < 0.70 and correlated:
+                    secondary_major = np.random.choice(correlated)
                 else:
-                    secondary_major = np.random.choice([m for m in range(16) if m != primary_major])
+                    others = [m for m in enabled_majors if m != primary_major]
+                    secondary_major = np.random.choice(others) if others else None
             else:
                 secondary_major = None
         

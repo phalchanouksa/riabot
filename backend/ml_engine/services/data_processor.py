@@ -74,20 +74,30 @@ def parse_json_to_flat_array(json_input):
 
     return np.array(full_flat, dtype=int)
 
-def load_all_real_data(data_folder):
+def load_all_real_data(data_folder, enabled_majors=None):
     """
     Iterates through all .csv files in the data_folder.
     Parses "Raw Scores" and "Recommended Major".
+    
+    Args:
+        data_folder: Path to folder containing CSV files
+        enabled_majors: List of enabled major IDs (0-15). If None, uses all 16.
+                        Rows whose major is NOT in enabled_majors are skipped.
+                        Labels are remapped to 0..len(enabled_majors)-1.
     
     Optional columns:
     - "Actual_Choice": If present, used as label instead of "Recommended Major"
     - "User_Rating": If present (1-5), converted to sample weight (0.33-1.67)
     
     Returns:
-        X_real: Features array
-        y_real: Labels array
-        weights_real: Sample weights array (1.0 if no rating)
+        X_real, y_real, weights_real  (or None, None, None if no valid data)
     """
+    if enabled_majors is None:
+        enabled_majors = list(range(16))
+    
+    enabled_set = set(enabled_majors)
+    id_to_class = {mid: idx for idx, mid in enumerate(sorted(enabled_majors))}
+    
     all_files = glob.glob(os.path.join(data_folder, "*.csv"))
     
     if not all_files:
@@ -118,6 +128,13 @@ def load_all_real_data(data_folder):
                 
                 label = get_major_id(major_str)
                 
+                # Skip rows whose major is not in the enabled set
+                if label == -1 or label not in enabled_set:
+                    continue
+                
+                # Remap to contiguous class index
+                remapped_label = id_to_class[label]
+                
                 # Calculate weight based on User_Rating
                 weight = 1.0  # Default weight
                 if "User_Rating" in df.columns and pd.notna(row["User_Rating"]):
@@ -128,10 +145,9 @@ def load_all_real_data(data_folder):
                     except (ValueError, TypeError):
                         weight = 1.0  # Fallback to default if invalid
                 
-                if label != -1:
-                    X_list.append(features)
-                    y_list.append(label)
-                    weights_list.append(weight)
+                X_list.append(features)
+                y_list.append(remapped_label)
+                weights_list.append(weight)
                     
         except Exception as e:
             print(f"Error processing {filename}: {e}")

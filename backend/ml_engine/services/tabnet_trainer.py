@@ -1,4 +1,5 @@
 import os
+import json
 import numpy as np
 import threading
 from pytorch_tabnet.tab_model import TabNetClassifier
@@ -12,53 +13,103 @@ MODEL_PATH = os.path.join(SAVED_MODELS_DIR, 'major_model.zip')
 
 from pytorch_tabnet.callbacks import Callback
 
+TRAINING_STATE_FILE = os.path.join(SAVED_MODELS_DIR, 'training_state.json')
+
 class TrainingState:
-    _instance = None
-    
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(TrainingState, cls).__new__(cls)
-            cls._instance.reset()
-        return cls._instance
-    
+    """
+    File-backed training state — readable by any process (Django web + training subprocess).
+    All reads/writes go through TRAINING_STATE_FILE so logs are visible in real time.
+    """
+
+    def __init__(self):
+        # Ensure directory exists
+        os.makedirs(SAVED_MODELS_DIR, exist_ok=True)
+
+    # ── Internal file I/O ────────────────────────────────────────────────────
+    def _read(self) -> dict:
+        try:
+            if os.path.exists(TRAINING_STATE_FILE):
+                with open(TRAINING_STATE_FILE, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        return {"status": "IDLE", "current_epoch": 0, "total_epochs": 0, "logs": [], "metrics": {}}
+
+    def _write(self, data: dict):
+        try:
+            with open(TRAINING_STATE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f)
+        except Exception as e:
+            print(f"[TrainingState] Write error: {e}")
+
+    # ── Public API (mirrors old singleton API) ────────────────────────────────
+    @property
+    def status(self):
+        return self._read().get("status", "IDLE")
+
+    @property
+    def logs(self):
+        return self._read().get("logs", [])
+
+    @property
+    def metrics(self):
+        return self._read().get("metrics", {})
+
+    @property
+    def current_epoch(self):
+        return self._read().get("current_epoch", 0)
+
+    @property
+    def total_epochs(self):
+        return self._read().get("total_epochs", 0)
+
     def reset(self):
-        self.status = "IDLE" # IDLE, TRAINING, COMPLETED, ERROR
-        self.current_epoch = 0
-        self.total_epochs = 0
-        self.logs = []
-        self.metrics = {}
-        
+        self._write({"status": "IDLE", "current_epoch": 0, "total_epochs": 0, "logs": [], "metrics": {}})
+
     def log(self, message):
         print(message)
-        self.logs.append(message)
-        # Keep only last 100 logs
-        if len(self.logs) > 100:
-            self.logs.pop(0)
-            
+        data = self._read()
+        data.setdefault("logs", []).append(message)
+        if len(data["logs"]) > 200:
+            data["logs"] = data["logs"][-200:]
+        self._write(data)
+
     def set_status(self, status):
-        self.status = status
-        
+        data = self._read()
+        data["status"] = status
+        self._write(data)
+
     def update_progress(self, epoch, total):
-        self.current_epoch = epoch
-        self.total_epochs = total
-        
+        data = self._read()
+        data["current_epoch"] = epoch
+        data["total_epochs"] = total
+        self._write(data)
+
+    def set_metrics(self, metrics):
+        data = self._read()
+        data["metrics"] = metrics
+        self._write(data)
+
     def to_dict(self):
-        return {
-            "status": self.status,
-            "current_epoch": self.current_epoch,
-            "total_epochs": self.total_epochs,
-            "logs": self.logs,
-            "metrics": self.metrics
-        }
+        return self._read()
+
+
+class TrainingCancelled(Exception):
+    """Raised when user clicks Stop."""
+    pass
 
 class StatusCallback(Callback):
     def __init__(self, state):
         self.state = state
         
     def on_epoch_end(self, epoch, logs=None):
+        # Check for user-requested stop EVERY epoch
+        if self.state.status == "STOPPING":
+            self.state.log("Training stopped by user.")
+            raise TrainingCancelled("User requested stop.")
+
         self.state.update_progress(epoch + 1, self.state.total_epochs)
         if logs:
-            # Construct a detailed log message with all metrics
             parts = [f"Epoch {epoch + 1}"]
             for key, value in logs.items():
                 if isinstance(value, float):
@@ -67,28 +118,40 @@ class StatusCallback(Callback):
                     parts.append(f"{key}={value}")
             
             self.state.log(", ".join(parts))
-            self.state.metrics = logs
+            self.state.set_metrics(logs)
 
-def train_hybrid_model_task(n_synthetic=5000, max_epochs=20, patience=5, batch_size=256):
+def train_hybrid_model_task(n_synthetic=5000, max_epochs=20, patience=5, batch_size=256, enabled_majors=None):
     state = TrainingState()
     state.reset()
     state.set_status("TRAINING")
     state.log("Starting hybrid training task...")
     
     try:
+        from .major_config import save_enabled_majors, get_enabled_majors
+        
+        # Resolve which majors to use
+        if enabled_majors is None:
+            enabled_majors = get_enabled_majors()
+        else:
+            save_enabled_majors(enabled_majors)  # Persist the choice
+        
+        state.log(f"Training with {len(enabled_majors)} enabled majors: {enabled_majors}")
+        
         # 1. Load Synthetic Data (if needed)
         if n_synthetic > 0:
-            state.log(f"Generating NEW synthetic data ({n_synthetic} samples)...")
-            X_syn, y_syn = generate_base_data(n_samples=n_synthetic)
+            state.log(f"Generating NEW synthetic data ({n_synthetic} samples) for {len(enabled_majors)} classes...")
+            X_syn, y_syn = generate_base_data(n_samples=n_synthetic, enabled_majors=enabled_majors)
         else:
             state.log("Skipping synthetic data generation (n_synthetic=0).")
             X_syn, y_syn = None, None
         
         # 2. Load Real Data
         state.log(f"Loading real data from {TRAINING_DATA_DIR}...")
-        X_real, y_real, weights_real = load_all_real_data(TRAINING_DATA_DIR)
+        X_real, y_real, weights_real = load_all_real_data(TRAINING_DATA_DIR, enabled_majors=enabled_majors)
         
         # 3. Merge (including weights)
+        n_real_samples = len(X_real) if X_real is not None else 0
+
         if X_real is not None and y_real is not None:
             if X_syn is not None and y_syn is not None:
                 state.log(f"Merging {len(X_real)} real samples with {len(X_syn)} synthetic samples.")
@@ -109,10 +172,16 @@ def train_hybrid_model_task(n_synthetic=5000, max_epochs=20, patience=5, batch_s
             weights_final = np.ones(len(X_syn))  # All synthetic = weight 1.0
         else:
             raise ValueError("No training data available (both real and synthetic are empty).")
-            
+
+        # --- Check if stop was requested before heavy training starts ---
+        if state.status == "STOPPING":
+            state.log("Training cancelled by user before model fit.")
+            state.set_status("ERROR")
+            return
+
         # Split into Train/Validation
         from sklearn.model_selection import train_test_split
-        
+
         # Check if dataset is large enough for validation split
         n_samples = len(X_final)
         unique_classes = len(np.unique(y_final))
@@ -152,7 +221,7 @@ def train_hybrid_model_task(n_synthetic=5000, max_epochs=20, patience=5, batch_s
         
         state.log(f"Configuration: max_epochs={max_epochs}, patience={patience}, batch_size={batch_size}")
         state.log("Fitting model...")
-        state.total_epochs = max_epochs
+        state.update_progress(0, max_epochs)
         
         # Prepare evaluation sets
         if X_valid is not None and y_valid is not None:
@@ -187,13 +256,19 @@ def train_hybrid_model_task(n_synthetic=5000, max_epochs=20, patience=5, batch_s
             
             # Get metrics if available
             try:
-                if 'valid_accuracy' in clf.history and len(clf.history['valid_accuracy']) > clf.best_epoch:
-                    best_val_acc = clf.history['valid_accuracy'][clf.best_epoch]
+                val_acc = clf.history['valid_accuracy']
+                if len(val_acc) > clf.best_epoch:
+                    best_val_acc = val_acc[clf.best_epoch]
                     state.log(f"Best validation accuracy: {best_val_acc:.4f} ({best_val_acc*100:.2f}%)")
-                elif 'train_accuracy' in clf.history and len(clf.history['train_accuracy']) > clf.best_epoch:
-                    best_train_acc = clf.history['train_accuracy'][clf.best_epoch]
-                    state.log(f"Best training accuracy: {best_train_acc:.4f} ({best_train_acc*100:.2f}%)")
-            except (KeyError, IndexError, TypeError):
+            except KeyError:
+                try:
+                    train_acc = clf.history['train_accuracy']
+                    if len(train_acc) > clf.best_epoch:
+                        best_train_acc = train_acc[clf.best_epoch]
+                        state.log(f"Best training accuracy: {best_train_acc:.4f} ({best_train_acc*100:.2f}%)")
+                except KeyError:
+                    pass
+            except (IndexError, TypeError):
                 pass
         else:
             state.log("Training completed all epochs")
@@ -222,12 +297,13 @@ def train_hybrid_model_task(n_synthetic=5000, max_epochs=20, patience=5, batch_s
             top_k_acc = top_k_hits / len(y_valid)
             
             # Store in state
-            state.metrics['evaluation'] = {
+            eval_metrics = {
                 'confusion_matrix': cm,
                 'classification_report': report,
                 'top_k_accuracy': top_k_acc,
                 'test_accuracy': accuracy_score(y_valid, y_pred)
             }
+            state.set_metrics({'evaluation': eval_metrics})
             state.log(f"Evaluation complete. Top-3 Accuracy: {top_k_acc:.4f}")
 
         # 6. Save
@@ -248,15 +324,33 @@ def train_hybrid_model_task(n_synthetic=5000, max_epochs=20, patience=5, batch_s
         from .model_manager import ModelManager, ACTIVE_MODEL_PATH
         
         # Prepare metrics for registry
-        metrics_to_save = state.metrics.get('evaluation', {})
-        if not metrics_to_save and 'valid_accuracy' in clf.history:
-             metrics_to_save = {'test_accuracy': clf.history['valid_accuracy'][-1]}
+        saved_metrics = state.metrics
+        metrics_to_save = saved_metrics.get('evaluation', {})
+        if not metrics_to_save:
+            try:
+                metrics_to_save = {'test_accuracy': clf.history['valid_accuracy'][-1]}
+            except KeyError:
+                pass
              
+        # Get final training loss and epoch info
+        try:
+            final_loss = clf.history['loss'][-1]
+            actual_epochs = len(clf.history['loss'])
+        except KeyError:
+            final_loss = None
+            actual_epochs = max_epochs
+
         config = {
             'max_epochs': max_epochs,
             'patience': patience,
             'batch_size': batch_size,
-            'n_synthetic': n_synthetic
+            'n_synthetic': n_synthetic,
+            'n_real': n_real_samples,
+            'total_samples': n_synthetic + n_real_samples,
+            'enabled_majors': enabled_majors,
+            'final_loss': round(final_loss, 4) if final_loss else None,
+            'stopped_epoch': actual_epochs,
+            'best_epoch': (clf.best_epoch + 1) if hasattr(clf, 'best_epoch') else None,
         }
         
         ModelManager.register_model(model_filename, metrics_to_save, config)
@@ -266,47 +360,48 @@ def train_hybrid_model_task(n_synthetic=5000, max_epochs=20, patience=5, batch_s
         shutil.copy2(save_path_no_ext + '.zip', ACTIVE_MODEL_PATH)
         state.log(f"Model activated as {os.path.basename(ACTIVE_MODEL_PATH)}")
         
+        # Also update the major_config.json to reflect the trained majors
+        save_enabled_majors(enabled_majors)
+        state.log(f"Major config saved: {len(enabled_majors)} majors enabled.")
+        
         # 7. Reload
         MajorRecommender.reload_model()
         state.log("Training complete and model reloaded.")
         state.set_status("COMPLETED")
         
+    except TrainingCancelled:
+        state.log("Training was cancelled.")
+        state.set_status("IDLE")
     except Exception as e:
+        import traceback
+        trace_str = traceback.format_exc()
         state.log(f"Error during training: {str(e)}")
+        for line in trace_str.split('\n'):
+            if line.strip():
+                state.log(line)
         state.set_status("ERROR")
 
-def start_training(n_synthetic=5000, max_epochs=20, patience=5, batch_size=256):
+def start_training(n_synthetic=5000, max_epochs=20, patience=5, batch_size=256, enabled_majors=None):
     """
-    Dispatch training to Celery worker (production) or fall back to threading (dev).
-    Returns a dict with dispatch info.
+    Dispatch training to a background daemon thread.
+    No Celery, no Redis, no Docker required.
     """
-    # Check if already training
     state = TrainingState()
-    if state.status == "TRAINING":
+    if state.status in ("TRAINING", "STOPPING"):
         return None
 
-    # Try Celery first (production-safe)
-    try:
-        from ml_engine.tasks import train_model_task
-        result = train_model_task.delay(
-            n_synthetic=n_synthetic,
-            max_epochs=max_epochs,
-            patience=patience,
-            batch_size=batch_size
-        )
-        return {"dispatch": "celery", "task_id": result.id}
-    except Exception as e:
-        # Celery/Redis not available — fall back to thread (dev mode)
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.warning(f"Celery unavailable ({e}), falling back to threading.")
-        
-        thread = threading.Thread(
-            target=train_hybrid_model_task,
-            args=(n_synthetic, max_epochs, patience, batch_size)
-        )
-        thread.start()
-        return {"dispatch": "thread"}
+    # Reset and mark as TRAINING immediately so the UI reflects it
+    state.reset()
+    state.set_status("TRAINING")
+    state.log("Starting training...")
+
+    thread = threading.Thread(
+        target=train_hybrid_model_task,
+        args=(n_synthetic, max_epochs, patience, batch_size, enabled_majors),
+        daemon=True
+    )
+    thread.start()
+    return {"dispatch": "thread"}
 
 
 # Backward-compatible alias

@@ -1,0 +1,370 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Major Mappings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'ml_engine/css/style.css' %}">
+    <style>
+        .category-card {
+            background-color: var(--surface-color);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .major-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px 16px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #d32f2f;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #ffebee;
+        }
+
+        .add-form {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .add-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .add-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 16px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-family: inherit;
+        }
+
+        .add-btn:hover {
+            box-shadow: 0 4px 12px rgba(11, 87, 208, 0.2);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 24px;
+            gap: 24px;
+        }
+        .tab {
+            padding: 12px 16px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab:hover {
+            color: var(--text-primary);
+        }
+        .tab.active {
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Allow page to scroll */
+        body {
+            height: auto !important;
+            min-height: 100vh;
+            overflow: auto !important;
+        }
+
+        .main-container {
+            height: auto !important;
+            overflow: visible !important;
+            flex: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="header-title">
+            <span class="material-icons-outlined sparkle-icon">account_balance</span>
+            <span>University Major Mappings</span>
+        </div>
+        <div>
+            <a href="/ml/" style="color:var(--text-primary); text-decoration:none; display:flex; align-items:center; gap:4px; font-weight:500;">
+                <span class="material-icons-outlined">arrow_back</span>
+                Back to Hub
+            </a>
+        </div>
+    </div>
+
+    <div class="main-container" style="flex-direction: column; max-width: 900px; margin: 32px auto; padding: 0 20px;">
+        <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 8px;">Configure AI Recommendations</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 32px; line-height: 1.5;">
+            Map the broad, generic fields predicted by the ML engine (like "IT" or "Business") to exactly what your university calls them and the specific jobs they lead to.
+        </p>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('majors')">
+                <span class="material-icons-outlined">school</span> University Programs
+            </div>
+            <div class="tab" onclick="switchTab('careers')">
+                <span class="material-icons-outlined">work</span> Career Paths
+            </div>
+        </div>
+
+        <div id="majors-tab" class="tab-content active">
+            <div class="category-card" style="background:#f0f4ff; border-color:#d2e3fc;">
+                <h2 class="card-title" style="margin-bottom: 12px; color:#185abc;">Add New Program Mapping</h2>
+                <div class="add-form" style="margin-top:0;">
+                    <select id="newCatSelect" class="add-input" style="flex:0.5;">
+                        <option value="Agriculture">Agriculture</option>
+                        <option value="Architecture">Architecture</option>
+                        <option value="Arts">Arts</option>
+                        <option value="Business">Business</option>
+                        <option value="Education">Education</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Government">Government</option>
+                        <option value="Health">Health</option>
+                        <option value="Hospitality">Hospitality</option>
+                        <option value="Human Services">Human Services</option>
+                        <option value="IT">IT</option>
+                        <option value="Law">Law</option>
+                        <option value="Manufacturing">Manufacturing</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Science">Science</option>
+                        <option value="Transport">Transport</option>
+                    </select>
+                    <input type="text" id="newNameInput" class="add-input" placeholder="Official University Program (e.g., Information Technology)">
+                    <button onclick="addMapping()" class="add-btn">
+                        <span class="material-icons-outlined" style="font-size: 18px;">add</span> Add
+                    </button>
+                </div>
+            </div>
+
+            <div id="mappingsContainer">
+                <div style="text-align:center; padding: 40px; color:var(--text-secondary);">Loading programs...</div>
+            </div>
+        </div>
+
+        <div id="careers-tab" class="tab-content">
+            <div class="category-card" style="background:#fdf2f8; border-color:#fbcfe8;">
+                <h2 class="card-title" style="margin-bottom: 12px; color:#9d174d;">Add New Career Path</h2>
+                <div class="add-form" style="margin-top:0;">
+                    <select id="newCareerMajorSelect" class="add-input" style="flex:0.5;">
+                        <option value="">Select a University Program first...</option>
+                    </select>
+                    <input type="text" id="newCareerInput" class="add-input" placeholder="Career Path (e.g., Software Engineer)">
+                    <button onclick="addCareer()" class="add-btn" style="background:#be185d;">
+                        <span class="material-icons-outlined" style="font-size: 18px;">add</span> Add
+                    </button>
+                </div>
+            </div>
+
+            <div id="careersContainer">
+                <div style="text-align:center; padding: 40px; color:var(--text-secondary);">Loading careers...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/ml/mappings/';
+        const CAREER_API_URL = '/api/ml/mappings/careers/';
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tabId === 'majors') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('majors-tab').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('careers-tab').classList.add('active');
+            }
+        }
+
+        let globalMajors = {};
+
+        async function loadMappings() {
+            try {
+                const [resMajors, resCareers] = await Promise.all([
+                    fetch(API_URL + '?format=ui'),
+                    fetch(CAREER_API_URL + '?format=ui')
+                ]);
+                const dataMajors = await resMajors.json();
+                const dataCareers = await resCareers.json();
+                
+                globalMajors = {};
+                const selectEl = document.getElementById('newCareerMajorSelect');
+                selectEl.innerHTML = '<option value="">Select a University Program first...</option>';
+
+                const mappings = dataMajors.mappings || {};
+                for (let cat in mappings) {
+                    for (let m of mappings[cat]) {
+                        globalMajors[m.id] = { name: m.name, cat: cat };
+                        selectEl.innerHTML += `<option value="${m.id}">${m.name} (${cat})</option>`;
+                    }
+                }
+                
+                renderMappings(dataMajors.mappings);
+                renderCareers(dataCareers.careers);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('mappingsContainer').innerHTML = '<div style="color:red; text-align:center;">Failed to load mapping.</div>';
+                document.getElementById('careersContainer').innerHTML = '<div style="color:red; text-align:center;">Failed to load careers.</div>';
+            }
+        }
+
+        function renderMappings(mappings) {
+            const container = document.getElementById('mappingsContainer');
+            container.innerHTML = '';
+            const categories = Object.keys(mappings || {}).sort();
+
+            if(categories.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding: 40px; border:2px dashed #ccc; border-radius:12px; color:var(--text-secondary);">No active mappings.</div>';
+                return;
+            }
+
+            for (let cat of categories) {
+                const card = document.createElement('div');
+                card.className = 'category-card';
+                card.innerHTML = `<h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 500; display:flex; align-items:center; gap:8px;">
+                                    <span class="material-icons-outlined" style="color:var(--accent-color);">school</span> ${cat}
+                                  </h3>`;
+                
+                for (let item of mappings[cat]) {
+                    const row = document.createElement('div');
+                    row.className = 'major-item';
+                    row.innerHTML = `
+                        <span>${item.name}</span>
+                        <button class="delete-btn" onclick="deleteMapping(${item.id})" title="Remove"><span class="material-icons-outlined" style="font-size: 18px;">delete</span></button>
+                    `;
+                    card.appendChild(row);
+                }
+                container.appendChild(card);
+            }
+        }
+
+        function renderCareers(careers) {
+            const container = document.getElementById('careersContainer');
+            container.innerHTML = '';
+            
+            const majorIds = Object.keys(careers || {});
+
+            if(majorIds.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding: 40px; border:2px dashed #ccc; border-radius:12px; color:var(--text-secondary);">No active career mappings.</div>';
+                return;
+            }
+
+            for (let majorId of majorIds) {
+                const majorInfo = globalMajors[majorId] || { name: 'Unknown Program', cat: 'Unknown' };
+                const card = document.createElement('div');
+                card.className = 'category-card';
+                card.innerHTML = `<h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 500; display:flex; align-items:center; gap:8px;">
+                                    <span class="material-icons-outlined" style="color:#be185d;">work</span> ${majorInfo.name} <span style="font-size:12px; color:#666;">(${majorInfo.cat})</span>
+                                  </h3>`;
+                
+                for (let item of careers[majorId]) {
+                    const row = document.createElement('div');
+                    row.className = 'major-item';
+                    row.innerHTML = `
+                        <span>${item.title}</span>
+                        <button class="delete-btn" onclick="deleteCareer(${item.id})" title="Remove"><span class="material-icons-outlined" style="font-size: 18px;">delete</span></button>
+                    `;
+                    card.appendChild(row);
+                }
+                container.appendChild(card);
+            }
+        }
+
+        async function addMapping() {
+            const cat = document.getElementById('newCatSelect').value;
+            const name = document.getElementById('newNameInput').value.trim();
+            if (!name) return alert('Enter program name.');
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: cat, name: name })
+                });
+                if (res.ok) { document.getElementById('newNameInput').value = ''; loadMappings(); }
+                else alert('Error: ' + (await res.json()).error);
+            } catch (e) { alert('Connection error'); }
+        }
+
+        async function deleteMapping(id) {
+            if (!confirm("Remove this program?")) return;
+            try {
+                const res = await fetch(API_URL, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) });
+                if (res.ok) loadMappings();
+            } catch (e) { alert('Connection error'); }
+        }
+
+        async function addCareer() {
+            const majorId = document.getElementById('newCareerMajorSelect').value;
+            const title = document.getElementById('newCareerInput').value.trim();
+            if (!majorId) return alert('Select a University Program first.');
+            if (!title) return alert('Enter career title.');
+
+            try {
+                const res = await fetch(CAREER_API_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ major_id: majorId, title: title })
+                });
+                if (res.ok) { document.getElementById('newCareerInput').value = ''; loadMappings(); }
+                else alert('Error: ' + (await res.json()).error);
+            } catch (e) { alert('Connection error'); }
+        }
+
+        async function deleteCareer(id) {
+            if (!confirm("Remove this career path?")) return;
+            try {
+                const res = await fetch(CAREER_API_URL, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) });
+                if (res.ok) loadMappings();
+            } catch (e) { alert('Connection error'); }
+        }
+
+        // Run on start
+        loadMappings();
+    </script>
+</body>
+</html>

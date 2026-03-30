@@ -277,3 +277,36 @@ input[type="file"] {
     box-shadow: none;
     font-family: var(--font-family);
 }
+
+/* Major Chip (tick/untick) */
+.major-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 100px;
+    border: 1.5px solid #e0e0e0;
+    background: #ffffff;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.18s, background 0.18s, color 0.18s;
+}
+
+.major-chip input[type=checkbox] {
+    display: none;
+}
+
+.major-chip.enabled {
+    border-color: var(--accent-color);
+    background: var(--accent-bg);
+    color: var(--accent-color);
+}
+
+.major-chip:hover {
+    border-color: var(--accent-color);
+    background: #e8f0fe;
+    color: var(--accent-color);
+}

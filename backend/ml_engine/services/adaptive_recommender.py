@@ -11,8 +11,6 @@ This module implements an advanced adaptive testing approach that:
 import numpy as np
 from typing import Dict, List, Tuple, Optional
 from .recommender import MajorRecommender
-
-
 class AdaptiveRecommender:
     """
     Advanced adaptive recommendation system that minimizes questions
@@ -159,6 +157,50 @@ class AdaptiveRecommender:
             max_entropy = np.log(16)  # 16 majors
             uncertainty = entropy / max_entropy
             
+            # XAI: Feature Importance extraction using TabNet's built-in explainability
+            xai_explanations = []
+            try:
+                # explain_matrix gives importance for each feature for this specific prediction
+                explain_matrix, _ = model.explain(features_2d)
+                feature_importances = explain_matrix[0]
+                
+                # Get the top 5 most important features that influenced this decision
+                # Only consider features the user actually answered (>0)
+                valid_indices = [i for i in range(256) if features[i] > 0]
+                if valid_indices:
+                    # Sort valid indices by their importance
+                    valid_indices.sort(key=lambda idx: feature_importances[idx], reverse=True)
+                    top_features_idx = valid_indices[:5]
+                    
+                    for idx in top_features_idx:
+                        importance = float(feature_importances[idx])
+                        if importance < 1e-5: continue # Skip if basically 0 importance
+                        
+                        if idx < 96:
+                            cat_id = idx // 6
+                            feat_type = "ចំណាប់អារម្មណ៍ (Interest)"
+                        else:
+                            offset = idx - 96
+                            cat_id = offset // 10
+                            feat_type = "ជំនាញ (Skill)"
+                            
+                        cat_name = MajorRecommender.get_major_name(cat_id)
+                        
+                        from .question_mapper import get_question_info
+                        q_info = get_question_info(int(idx))
+                        
+                        xai_explanations.append({
+                            "feature_index": int(idx),
+                            "type": feat_type,
+                            "category": cat_name,
+                            "question_text": q_info.get("text", ""),
+                            "importance_score": importance,
+                            "user_value": int(features[idx])
+                        })
+            except Exception as e:
+                print(f"XAI Error: {e}")
+                pass
+            
             # Determine if we should continue asking questions
             questions_asked = len(answers)
             should_continue = cls._should_continue_asking(
@@ -183,7 +225,8 @@ class AdaptiveRecommender:
                 'should_continue': should_continue,
                 'next_questions': next_questions,
                 'stage': cls._get_current_stage(questions_asked, confidence),
-                'probabilities': probabilities.tolist()
+                'probabilities': probabilities.tolist(),
+                'xai_explanations': xai_explanations
             }
             
         except Exception as e:
@@ -277,41 +320,48 @@ class AdaptiveRecommender:
         questions_asked = result['questions_asked']
         stage = result['stage']
         
-        # Build explanation
         explanation_parts = []
         
-        # Confidence statement
-        if confidence >= 0.90:
+        # Handling Uncertainty & Low Confidence
+        if confidence < 0.40 and result['questions_asked'] > 15:
             explanation_parts.append(
-                f"I'm very confident ({confidence*100:.0f}%) that **{major}** is an excellent fit for you!"
+                f"អ្នកមានចំណាប់អារម្មណ៍ និងសមត្ថភាពចម្រុះគ្នាខ្លាំងណាស់! ប៉ុន្តែជំនាញ **{major}** មានអាទិភាពខ្ពស់ជាងគេបន្តិច ({confidence*100:.0f}% confidence)។"
             )
-        elif confidence >= 0.80:
+            explanation_parts.append("ដោយសារអ្នកមានសមត្ថភាពច្រើនផ្នែកពេក ខ្ញុំសូមណែនាំឲ្យអ្នកពិចារណាលើការរៀនជំនាញពីរ (Double Major) ឬជំនាញដែលមានទំនាក់ទំនងគ្នា។")
+        elif confidence >= 0.90:
             explanation_parts.append(
-                f"Based on your answers, **{major}** appears to be a strong match ({confidence*100:.0f}% confidence)."
+                f"ខ្ញុំមានទំនុកចិត្តខ្ពស់ ({confidence*100:.0f}%) ថាជំនាញ **{major}** គឺជាជម្រើសដ៏ល្អបំផុតសម្រាប់អ្នក!"
+            )
+        elif confidence >= 0.70:
+            explanation_parts.append(
+                f"ផ្អែកតាមចម្លើយរបស់អ្នក ជំនាញ **{major}** ហាក់ដូចជាជម្រើសដែលស័ក្តិសមខ្លាំង ({confidence*100:.0f}% confidence)។"
             )
         else:
             explanation_parts.append(
-                f"**{major}** seems like a good fit ({confidence*100:.0f}% confidence), "
-                f"though I'd like to ask a few more questions to be more certain."
+                f"ជំនាញ **{major}** ជាជម្រើសដែលស័ក្តិសមសម្រាប់អ្នក ({confidence*100:.0f}% confidence) "
+                f"ទោះបីជាអ្នកបង្ហាញចំណាប់អារម្មណ៍លើផ្នែកផ្សេងទៀតខ្លះៗក៏ដោយ។"
             )
         
-        # Stage information
-        stage_messages = {
-            'profiling': "We're in the initial profiling stage, getting a broad sense of your interests and skills.",
-            'narrowing': "I'm narrowing down the options based on your strongest areas.",
-            'refining': "We're in the final refinement stage, fine-tuning the recommendation."
-        }
-        explanation_parts.append(stage_messages.get(stage, ""))
+        # XAI Explanation (Why did I recommend this?)
+        if 'xai_explanations' in result and result['xai_explanations']:
+            explanation_parts.append("\n**ខាងក្រោមនេះជាមូលហេតុសំខាន់ៗដែលខ្ញុំណែនាំជំនាញនេះ:**")
+            for xai in result['xai_explanations'][:3]:
+                # Format: I recognized your strong Interest in [Category] because you answered highly to [Question]
+                val_text = "ខ្ពស់" if xai['user_value'] >= 3 else "មធ្យម"
+                explanation_parts.append(
+                    f"- អ្នកមានការវាយតម្លៃកម្រិត{val_text} លើ: \"{xai['question_text']}\" "
+                    f"({xai['type']} - ស៊ីគ្នាខ្លាំងនឹងជំនាញ {xai['category']})"
+                )
         
         # Top 3 alternatives
         if len(result['top_3']) > 1:
             alternatives = ", ".join([
-                f"{item['major']} ({item['confidence']*100:.0f}%)"
+                f"**{item['major']}** ({item['confidence']*100:.0f}%)"
                 for item in result['top_3'][1:]
             ])
-            explanation_parts.append(f"\nOther strong options: {alternatives}")
+            explanation_parts.append(f"\nជម្រើសផ្សេងទៀតដែលអ្នកគួរពិចារណា៖ {alternatives}")
         
-        return " ".join(explanation_parts)
+        return "\n".join(explanation_parts)
     
     @classmethod
     def get_initial_questions(cls) -> List[int]:

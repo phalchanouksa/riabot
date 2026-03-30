@@ -19,6 +19,13 @@ rules:
       - intent: ask_help
       - action: utter_help
 
+  # ===== START SURVEY RULE =====
+  - rule: Start survey
+    steps:
+      - intent: start_survey
+      - action: action_start_survey
+      - action: action_ask_next_question
+
   # ===== FALLBACK RULE =====
   - rule: Ask the user to rephrase on fallback
     steps:

@@ -1,0 +1,34 @@
+{
+    "services": [
+        {
+            "name": "Backend",
+            "command": "venv\\Scripts\\python manage.py runserver",
+            "cwd": "backend",
+            "color": "cyan",
+            "key": "1",
+            "health_check_url": "http://localhost:8000",
+            "dependencies": []
+        },
+        {
+            "name": "Rasa Core",
+            "command": "venv\\Scripts\\python -m rasa run -m models --enable-api --cors \"*\"",
+            "cwd": "rasa",
+            "color": "magenta",
+            "key": "2"
+        },
+        {
+            "name": "Rasa Actions",
+            "command": "venv\\Scripts\\python -m rasa run actions",
+            "cwd": "rasa",
+            "color": "blue",
+            "key": "3"
+        },
+        {
+            "name": "Frontend",
+            "command": "npm run dev",
+            "cwd": "frontend",
+            "color": "green",
+            "key": "4"
+        }
+    ]
+}

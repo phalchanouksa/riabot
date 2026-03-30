@@ -1,7 +1,218 @@
-// --- Model History Logic ---
+// Full 16-major name lookup (matches backend ALL_MAJOR_NAMES)
+const ALL_MAJOR_NAMES = {
+    0: "Agriculture",    1: "Architecture",   2: "Arts",          3: "Business",
+    4: "Education",      5: "Finance",        6: "Government",    7: "Health",
+    8: "Hospitality",    9: "Human Services", 10: "IT",           11: "Law",
+    12: "Manufacturing", 13: "Sales",         14: "Science",      15: "Transport"
+};
+
+function showDetails(modelId) {
+    const model = currentModels.find(m => m.id === modelId);
+    if (!model) return;
+    const c = model.config || {};
+    const m = model.metrics || {};
+
+    document.getElementById('modalTitle').textContent = `Model: ${model.id}`;
+
+    // ── Helper ────────────────────────────────────────────────────────────
+    const v = (val, fmt) => {
+        if (val == null) return '—';
+        if (fmt === '%') return (val * 100).toFixed(2) + '%';
+        if (fmt === 'n') return val.toLocaleString();
+        if (fmt === 'f') return val.toFixed(4);
+        return val;
+    };
+    const card = (label, value, color) =>
+        `<div style="background:#f8f9fa;padding:10px 14px;border-radius:10px;border:1px solid #eee;">
+            <div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;">${label}</div>
+            <div style="font-weight:600;font-size:16px;color:${color || 'var(--text-primary)'};">${value}</div>
+        </div>`;
+
+    // ── Trained Majors ────────────────────────────────────────────────────
+    const enabledMajors = c.enabled_majors || null;
+    let majorsHtml = '';
+    if (enabledMajors && enabledMajors.length > 0) {
+        const chips = enabledMajors.map(id =>
+            `<span style="display:inline-block;padding:3px 10px;border-radius:100px;background:var(--accent-bg);color:var(--accent-color);font-size:11.5px;font-weight:500;margin:2px;">${ALL_MAJOR_NAMES[id] || 'Major ' + id}</span>`
+        ).join('');
+        majorsHtml = `
+            <div style="margin-bottom:16px;">
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:500;">
+                    Trained Majors (${enabledMajors.length} / 16)
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px;">${chips}</div>
+            </div>`;
+    } else {
+        majorsHtml = `<div style="margin-bottom:16px;font-size:13px;color:var(--text-secondary);">Trained on all 16 majors (legacy model)</div>`;
+    }
+
+    // ── Config (top section) ──────────────────────────────────────────────
+    const nSyn = v(c.n_synthetic, 'n');
+    const nReal = v(c.n_real, 'n');
+    const total = v(c.total_samples, 'n');
+    const stoppedEp = c.stopped_epoch || '—';
+    const bestEp = c.best_epoch || '—';
+    const maxEp = c.max_epochs || '—';
+    const finalLoss = v(c.final_loss, 'f');
+    const testAcc = v(m.test_accuracy, '%');
+    const top3Acc = v(m.top_k_accuracy, '%');
+
+    const configHtml = `
+        ${majorsHtml}
+        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;font-size:13px;">
+            ${card('Test Accuracy', testAcc, 'var(--accent-color)')}
+            ${card('Top-3 Accuracy', top3Acc, 'var(--success-color)')}
+            ${card('Final Loss', finalLoss, finalLoss === '—' ? '' : '#e67700')}
+            ${card('Synthetic Samples', nSyn, 'var(--accent-color)')}
+            ${card('Real Samples', nReal, nReal === '—' || nReal === '0' ? 'var(--text-secondary)' : 'var(--success-color)')}
+            ${card('Total Samples', total)}
+            ${card('Epochs (ran / max)', stoppedEp + ' / ' + maxEp)}
+            ${card('Best Epoch', bestEp)}
+            ${card('Batch Size', c.batch_size || '—')}
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);">
+            Trained: ${new Date(model.timestamp).toLocaleString()} &nbsp;|&nbsp;
+            Patience: ${c.patience || '—'}
+        </div>
+    `;
+    document.getElementById('modalConfig').innerHTML = configHtml;
+
+    // ── Summary (weighted avg) ────────────────────────────────────────────
+    let summaryHtml = '';
+    if (m.classification_report && m.classification_report['weighted avg']) {
+        const wa = m.classification_report['weighted avg'];
+        summaryHtml = `
+        <div style="background:#f8f9fa;padding:14px;border-radius:10px;font-size:13px;">
+            <div style="font-weight:500;margin-bottom:8px;color:var(--text-primary);">Weighted Averages</div>
+            <div style="display:flex;gap:24px;">
+                <span>Precision: <strong>${(wa.precision * 100).toFixed(1)}%</strong></span>
+                <span>Recall: <strong>${(wa.recall * 100).toFixed(1)}%</strong></span>
+                <span>F1-Score: <strong>${(wa['f1-score'] * 100).toFixed(1)}%</strong></span>
+                <span>Samples: <strong>${wa.support}</strong></span>
+            </div>
+        </div>`;
+    }
+    document.getElementById('modalSummary').innerHTML = summaryHtml;
+
+    // ── Classification Report Table ───────────────────────────────────────
+    const tbody = document.querySelector('#modalReportTable tbody');
+    tbody.innerHTML = '';
+
+    if (m.classification_report) {
+        const classToName = {};
+        if (enabledMajors) {
+            enabledMajors.forEach((mid, idx) => {
+                classToName[idx] = ALL_MAJOR_NAMES[mid] || `Major ${mid}`;
+            });
+        }
+
+        for (const [key, value] of Object.entries(m.classification_report)) {
+            if (key === 'accuracy' || key === 'macro avg' || key === 'weighted avg') continue;
+            const row = document.createElement('tr');
+            row.style.borderBottom = '1px solid #f0f0f0';
+            let className = key;
+            if (!isNaN(key)) {
+                const idx = parseInt(key);
+                className = classToName[idx] || ALL_MAJOR_NAMES[idx] || key;
+            }
+            // Color-code F1 score
+            const f1 = value['f1-score'] * 100;
+            const f1Color = f1 >= 80 ? 'var(--success-color)' : f1 >= 50 ? '#e67700' : 'var(--error-color)';
+            row.innerHTML = `
+                <td style="padding: 8px; font-weight: 500;">${className}</td>
+                <td style="padding: 8px;">${(value['precision'] * 100).toFixed(1)}%</td>
+                <td style="padding: 8px;">${(value['recall'] * 100).toFixed(1)}%</td>
+                <td style="padding: 8px; font-weight: 600; color: ${f1Color};">${f1.toFixed(1)}%</td>
+                <td style="padding: 8px; color: #666;">${value['support']}</td>
+            `;
+            tbody.appendChild(row);
+        }
+    } else {
+        tbody.innerHTML = '<tr><td colspan="5" style="padding: 16px; text-align: center;">No detailed report available.</td></tr>';
+    }
+
+    // ── Confusion Matrix ──────────────────────────────────────────────────
+    const cmThead = document.querySelector('#modalConfusionTable thead');
+    const cmTbody = document.querySelector('#modalConfusionTable tbody');
+    cmThead.innerHTML = '';
+    cmTbody.innerHTML = '';
+
+    const cm = m.confusion_matrix || (m.evaluation && m.evaluation.confusion_matrix);
+    if (cm && cm.length > 0) {
+        const classToName = {};
+        if (enabledMajors) {
+            enabledMajors.forEach((mid, idx) => {
+                classToName[idx] = ALL_MAJOR_NAMES[mid] || `M${mid}`;
+            });
+        } else {
+            for(let i=0; i<cm.length; i++) classToName[i] = ALL_MAJOR_NAMES[i] || `M${i}`;
+        }
+
+        const getShortName = (idx) => {
+            const fullName = classToName[idx] || `C${idx}`;
+            return fullName.substring(0, 3).toUpperCase();
+        };
+
+        let headerHtml = '<tr><th style="padding: 6px; border: 1px solid #e0e0e0; min-width: 80px; text-align: left; background: #f8f9fa;">Actual \\ Pred</th>';
+        for (let i = 0; i < cm[0].length; i++) {
+            headerHtml += `<th style="padding: 6px; border: 1px solid #e0e0e0; min-width: 30px; background: #f8f9fa;" title="${classToName[i]}">${getShortName(i)}</th>`;
+        }
+        headerHtml += '</tr>';
+        cmThead.innerHTML = headerHtml;
+
+        let maxVal = 0;
+        for (let r = 0; r < cm.length; r++) {
+            for (let c = 0; c < cm[r].length; c++) {
+                if (cm[r][c] > maxVal) maxVal = cm[r][c];
+            }
+        }
+
+        for (let r = 0; r < cm.length; r++) {
+            let rowHtml = `<tr><td style="padding: 6px; border: 1px solid #e0e0e0; text-align: left; font-weight: 500; background: #f8f9fa; white-space: nowrap;" title="${classToName[r]}">${classToName[r]}</td>`;
+            for (let c = 0; c < cm[r].length; c++) {
+                const val = cm[r][c];
+                const isDiagonal = r === c;
+                const intensity = maxVal > 0 ? (val / maxVal) : 0;
+                
+                let bgColor = '#fff';
+                let fgColor = '#333';
+                if (val > 0) {
+                    if (isDiagonal) {
+                        const alpha = Math.max(0.1, intensity).toFixed(2);
+                        bgColor = `rgba(32, 161, 68, ${alpha})`;
+                        fgColor = intensity > 0.6 ? '#fff' : '#000';
+                    } else {
+                        const alpha = Math.max(0.1, Math.min(1, intensity * 2)).toFixed(2);
+                        bgColor = `rgba(220, 53, 69, ${alpha})`;
+                        fgColor = alpha > 0.6 ? '#fff' : '#000';
+                    }
+                }
+                
+                rowHtml += `<td style="padding: 6px; border: 1px solid #e0e0e0; background-color: ${bgColor}; color: ${fgColor};" title="Actual: ${classToName[r]} | Pred: ${classToName[c]}">${val}</td>`;
+            }
+            rowHtml += '</tr>';
+            cmTbody.innerHTML += rowHtml;
+        }
+    } else {
+        cmTbody.innerHTML = '<tr><td style="padding: 16px; text-align: center;">No confusion matrix available.</td></tr>';
+    }
+
+    document.getElementById('detailsModal').style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('detailsModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function (event) {
+    const modal = document.getElementById('detailsModal');
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
 
 let currentModels = [];
-const MAJOR_NAMES = ["IT", "BA", "HM", "GD", "MD", "ACC", "ME", "EE", "CE", "IE", "AE", "CHE", "EN", "TH", "CH", "BI"];
 
 async function loadModelHistory() {
     try {
@@ -55,73 +266,6 @@ async function loadModelHistory() {
         });
     } catch (e) {
         console.error("Error loading history:", e);
-    }
-}
-
-function showDetails(modelId) {
-    const model = currentModels.find(m => m.id === modelId);
-    if (!model) return;
-
-    document.getElementById('modalTitle').textContent = `Model Details: ${model.id}`;
-
-    // Config
-    const configHtml = `
-        <p><strong>Max Epochs:</strong> ${model.config.max_epochs}</p>
-        <p><strong>Patience:</strong> ${model.config.patience}</p>
-        <p><strong>Batch Size:</strong> ${model.config.batch_size}</p>
-        <p><strong>Synthetic Samples:</strong> ${model.config.n_synthetic || 'N/A'}</p>
-    `;
-    document.getElementById('modalConfig').innerHTML = configHtml;
-
-    // Summary
-    const summaryHtml = `
-        <p><strong>Test Accuracy:</strong> ${(model.metrics.test_accuracy * 100).toFixed(2)}%</p>
-        <p><strong>Top-3 Accuracy:</strong> ${(model.metrics.top_k_accuracy * 100).toFixed(2)}%</p>
-        <p><strong>Loss:</strong> ${model.metrics.loss ? model.metrics.loss.toFixed(4) : 'N/A'}</p>
-    `;
-    document.getElementById('modalSummary').innerHTML = summaryHtml;
-
-    // Report Table
-    const tbody = document.querySelector('#modalReportTable tbody');
-    tbody.innerHTML = '';
-
-    if (model.metrics.classification_report) {
-        for (const [key, value] of Object.entries(model.metrics.classification_report)) {
-            if (key === 'accuracy' || key === 'macro avg' || key === 'weighted avg') continue;
-
-            const row = document.createElement('tr');
-            row.style.borderBottom = '1px solid #e0e0e0';
-
-            let className = key;
-            if (!isNaN(key) && MAJOR_NAMES[parseInt(key)]) {
-                className = MAJOR_NAMES[parseInt(key)];
-            }
-
-            row.innerHTML = `
-                <td style="padding: 8px; font-weight: 500;">${className}</td>
-                <td style="padding: 8px;">${(value['precision'] * 100).toFixed(1)}%</td>
-                <td style="padding: 8px;">${(value['recall'] * 100).toFixed(1)}%</td>
-                <td style="padding: 8px;">${(value['f1-score'] * 100).toFixed(1)}%</td>
-                <td style="padding: 8px; color: #666;">${value['support']}</td>
-            `;
-            tbody.appendChild(row);
-        }
-    } else {
-        tbody.innerHTML = '<tr><td colspan="5" style="padding: 16px; text-align: center;">No detailed report available.</td></tr>';
-    }
-
-    document.getElementById('detailsModal').style.display = 'block';
-}
-
-function closeModal() {
-    document.getElementById('detailsModal').style.display = 'none';
-}
-
-// Close modal when clicking outside
-window.onclick = function (event) {
-    const modal = document.getElementById('detailsModal');
-    if (event.target == modal) {
-        modal.style.display = "none";
     }
 }
 

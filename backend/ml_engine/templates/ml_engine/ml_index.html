@@ -56,6 +56,19 @@
             margin: 0;
             line-height: 1.5;
         }
+
+        /* Allow page to scroll */
+        body {
+            height: auto !important;
+            min-height: 100vh;
+            overflow: auto !important;
+        }
+
+        .main-container {
+            height: auto !important;
+            overflow: visible !important;
+            flex: none !important;
+        }
     </style>
 </head>
 
@@ -106,6 +119,15 @@
                     <h2 class="nav-title">Conversation Dialog Model Training in Rasa</h2>
                     <p class="nav-desc">Edit chatbot intents, stories, rules, and domains dynamically. Retrain NLP and
                         live hot-swap models.</p>
+                </div>
+            </a>
+
+            <!-- Major Mapping Configurator -->
+            <a href="/ml/mappings/ui/" class="nav-card">
+                <span class="material-icons-outlined nav-icon">account_balance</span>
+                <div>
+                    <h2 class="nav-title">University Majors Mapping</h2>
+                    <p class="nav-desc">Configure exactly what official degrees the AI should recommend when it predicts a specific ML field.</p>
                 </div>
             </a>
 

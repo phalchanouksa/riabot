@@ -14,7 +14,7 @@ from typing import Any, Text, Dict, List, Optional
 
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
-from rasa_sdk.events import SlotSet, ActionReverted
+from rasa_sdk.events import SlotSet, UserUtteranceReverted, FollowupAction
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +61,11 @@ def get_adaptive_prediction(answers: dict) -> Optional[dict]:
 def get_initial_questions() -> Optional[dict]:
     """Get initial question order from Django."""
     return call_django_api("adaptive/start/")
+
+
+def get_adaptive_explanation(answers: dict) -> Optional[dict]:
+    """Get human-readable XAI explanation from Django."""
+    return call_django_api("adaptive/explain/", method="POST", data={"answers": answers})
 
 
 # ============================================
@@ -203,6 +208,41 @@ class ActionAskNextQuestion(Action):
             SlotSet("current_question_idx", question_idx),
         ]
 
+# ============================================
+# Mapping: ML Generic Majors -> Official University Programs
+# ============================================
+import time
+_MAPPINGS_CACHE = {}
+_LAST_FETCH = 0
+
+_CAREER_CACHE = {}
+_LAST_CAREER_FETCH = 0
+
+def get_official_majors(generic_major_name: str) -> str:
+    global _MAPPINGS_CACHE, _LAST_FETCH
+    
+    # Refresh cache every 60 seconds
+    if time.time() - _LAST_FETCH > 60:
+        res = call_django_api("mappings/")
+        if res and "mappings" in res:
+            _MAPPINGS_CACHE = res["mappings"]
+        _LAST_FETCH = time.time()
+
+    mapped_list = _MAPPINGS_CACHE.get(generic_major_name, [])
+    if not mapped_list:
+        return ""
+        
+    result_str = "\n   *University Programs & Career Paths:*"
+    for item in mapped_list:
+        name = item.get("name", "Unknown Program")
+        careers = item.get("careers", [])
+        
+        result_str += f"\n   🔹 {name}"
+        if careers:
+            result_str += f" (Careers: {', '.join(careers)})"
+            
+    return result_str
+
     def _show_final_results(self, dispatcher, tracker):
         """Helper to transition to results when survey is complete."""
         answers = tracker.get_slot("answers_collected") or {}
@@ -211,10 +251,13 @@ class ActionAskNextQuestion(Action):
             dispatcher.utter_message(response="utter_no_answers")
             return [SlotSet("survey_active", False)]
 
-        # Get final prediction
-        result = get_adaptive_prediction(answers)
+        # Get final prediction AND explanation
+        explanation_result = get_adaptive_explanation(answers)
 
-        if result and "major" in result:
+        if explanation_result and "result" in explanation_result:
+            result = explanation_result["result"]
+            explanation_text = explanation_result.get("explanation", "")
+            
             major = result["major"]
             confidence = result["confidence"]
             top_3 = result.get("top_3", [])
@@ -222,14 +265,42 @@ class ActionAskNextQuestion(Action):
             # Add structured results
             results_summary = ""
             for i, m in enumerate(top_3):
+                rank_major = m.get('major', 'Unknown')
                 medal = ["🥇", "🥈", "🥉"][i] if i < 3 else f"{i+1}."
-                results_summary += f"\n{medal} **{m.get('major', 'Unknown')}** - សមស្រប {m.get('confidence', 0)*100:.0f}%"
+                
+                official_list = get_official_majors(rank_major)
+                
+                results_summary += f"\n{medal} **{rank_major}** - {m.get('confidence', 0)*100:.0f}%{official_list}"
 
             dispatcher.utter_message(
                 response="utter_survey_results",
                 num_answers=len(answers),
-                results_summary=results_summary
+                results_summary=results_summary,
+                explanation=explanation_text
             )
+            
+            # Generate Radar Chart Data
+            radar_data = []
+            categories = [
+                "Agriculture", "Architecture", "Arts", "Business", "Education", "Finance",
+                "Government", "Health", "Hospitality", "Human Services", "IT", "Law",
+                "Manufacturing", "Sales", "Science", "Transport"
+            ]
+            for i in range(16):
+                int_sum = sum(answers.get(str(i * 6 + j), answers.get(i * 6 + j, 0)) for j in range(6))
+                skill_sum = sum(answers.get(str(96 + i * 10 + j), answers.get(96 + i * 10 + j, 0)) for j in range(10))
+                
+                radar_data.append({
+                    "category": categories[i],
+                    "interest": round((int_sum / 18) * 100), # 6 questions * 3 points max
+                    "skill": round((skill_sum / 30) * 100), # 10 questions * 3 points max
+                })
+                
+            dispatcher.utter_message(custom={
+                "type": "radar_chart", 
+                "data": radar_data
+            })
+
 
             return [
                 SlotSet("survey_active", False),
@@ -340,6 +411,7 @@ class ActionProcessAnswer(Action):
                         SlotSet("survey_stage", stage),
                         SlotSet("questions_queue", new_queue),
                         SlotSet("answer_value", None),
+                        FollowupAction("action_ask_next_question"),
                     ]
 
         return [
@@ -350,6 +422,7 @@ class ActionProcessAnswer(Action):
             SlotSet("should_continue", should_continue),
             SlotSet("survey_stage", stage),
             SlotSet("answer_value", None),
+            FollowupAction("action_ask_next_question"),
         ]
 
 
@@ -373,24 +446,30 @@ class ActionShowResults(Action):
             dispatcher.utter_message(response="utter_no_answers")
             return []
 
-        result = get_adaptive_prediction(answers)
+        explanation_result = get_adaptive_explanation(answers)
 
-        if result and "major" in result:
+        if explanation_result and "result" in explanation_result:
+            result = explanation_result["result"]
+            explanation_text = explanation_result.get("explanation", "")
+            
             major = result["major"]
             confidence = result["confidence"]
             top_3 = result.get("top_3", [])
 
             results_summary = ""
             for i, m in enumerate(top_3[:3]):
+                rank_major = m.get('major', 'Unknown')
                 medal = ["🥇", "🥈", "🥉"][i]
-                results_summary += f"\n{medal} **{m.get('major', 'Unknown')}** - សមស្រប {m.get('confidence', 0)*100:.0f}%"
+                official_list = get_official_majors(rank_major)
+                results_summary += f"\n{medal} **{rank_major}** - {m.get('confidence', 0)*100:.0f}%{official_list}"
 
             dispatcher.utter_message(
                 response="utter_survey_results_partial",
                 major=major,
                 confidence=f"{confidence*100:.0f}",
                 num_answers=len(answers),
-                results_summary=results_summary
+                results_summary=results_summary,
+                explanation=explanation_text
             )
 
             return [
@@ -423,32 +502,20 @@ class ActionExplainRecommendation(Action):
             dispatcher.utter_message(response="utter_no_recommendation_yet")
             return []
 
-        result = get_adaptive_prediction(answers)
+        result = get_adaptive_explanation(answers)
 
-        if result and "major" in result:
-            major = result["major"]
-            confidence = result["confidence"]
-
-            # Build a summary of the student's answer patterns
-            interest_summary = []
-            skill_summary = []
-            for idx_str, val in answers.items():
-                idx = int(idx_str)
-                if idx < 96 and val >= 3:
-                    category = idx // 6
-                    interest_summary.append(f"category_{category}")
-                elif idx >= 96 and val >= 2:
-                    category = (idx - 96) // 10
-                    skill_summary.append(f"category_{category}")
-
-            dispatcher.utter_message(
-                response="utter_explain_results",
-                major=major,
-                interest_count=len(set(interest_summary)),
-                skill_count=len(set(skill_summary)),
-                total_answers=len(answers),
-                confidence=f"{confidence*100:.0f}"
-            )
+        if result and "explanation" in result:
+            explanation_text = result["explanation"]
+            
+            # Use the exact text generated by our XAI backend
+            dispatcher.utter_message(text=explanation_text)
+            
+            # Follow up if they have low confidence
+            pred_data = result.get("result", {})
+            if pred_data and pred_data.get("confidence", 1.0) < 0.60:
+                dispatcher.utter_message(
+                    text="Because your answers cover many different fields, I recommend talking to a human career counselor or exploring double-major options."
+                )
         else:
             dispatcher.utter_message(response="utter_explain_error")
 
@@ -530,20 +597,25 @@ class ActionDefaultFallback(Action):
         domain: Dict[Text, Any]
     ) -> List[Dict[Text, Any]]:
 
-        user_message = tracker.latest_message.get("text", "")
+        user_message = tracker.latest_message.get("text", "").strip()
 
         # Check if this might be a survey answer (just a number)
         survey_active = tracker.get_slot("survey_active")
         if survey_active:
             try:
-                val = int(user_message.strip())
+                val = int(user_message)
                 if 0 <= val <= 4:
-                    # This is likely a survey answer that got misclassified
-                    # Revert and let it be processed as an answer
-                    return [ActionReverted()]
+                    # This IS a survey answer that got misclassified as nlu_fallback.
+                    # Set the answer_value slot and chain to process_answer + ask_next.
+                    logger.info(f"Fallback intercepted survey answer: {val}")
+                    return [
+                        SlotSet("answer_value", val),
+                        FollowupAction("action_process_answer"),
+                    ]
             except (ValueError, TypeError):
                 pass
 
+        # Genuine fallback: user said something we don't understand
         dispatcher.utter_message(response="utter_fallback_rephrase")
-        
-        return [ActionReverted()]
+        return [UserUtteranceReverted()]
+
