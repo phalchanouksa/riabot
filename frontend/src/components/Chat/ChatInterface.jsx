@@ -14,8 +14,8 @@ import ProfileEditModal from '../Profile/ProfileEditModal';
 
 const ChatInterface = () => {
   const { t, i18n } = useTranslation();
-  const { theme, setTheme } = useTheme();
-  const { user, logout, setUser } = useAuth();
+  const { setTheme } = useTheme();
+  const { logout, setUser } = useAuth();
   const [updateError, setUpdateError] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -30,7 +30,7 @@ const ChatInterface = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
-  const [chatSessionExpired, setChatSessionExpired] = useState(false);
+  const [copyStatus, setCopyStatus] = useState('idle');
 
   useEffect(() => {
     // Always start with a fresh session
@@ -67,7 +67,7 @@ const ChatInterface = () => {
     const newSessionId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     setSessionId(newSessionId);
     setMessages([]);
-    setChatSessionExpired(false);
+    return newSessionId;
   };
 
   const handleSendMessage = async (overrideMessage = null) => {
@@ -93,8 +93,8 @@ const ChatInterface = () => {
     setLoading(true);
 
     try {
-      // Use the user's ID as the session tracker so Rasa knows who they are, fallback to guest sessionId
-      const activeUserId = user ? `user_${user.id}` : sessionId;
+      // Always use the per-chat session id so a fresh chat never reuses an old Rasa tracker.
+      const activeUserId = sessionId || startNewChat();
 
       const botResponses = await chatService.sendMessage(textToSend, activeUserId);
 
@@ -133,6 +133,66 @@ const ChatInterface = () => {
     handleSendMessage(payload);
   };
 
+  const serializeMessageForDebug = (message) => {
+    const role = String(message.type || 'unknown').toUpperCase();
+    const timestamp = message.timestamp ? new Date(message.timestamp).toISOString() : '';
+    const lines = [`[${role}] ${timestamp}`, message.content || ''];
+
+    if (Array.isArray(message.buttons) && message.buttons.length > 0) {
+      lines.push(`Buttons: ${JSON.stringify(message.buttons, null, 2)}`);
+    }
+
+    if (message.custom) {
+      lines.push(`Custom: ${JSON.stringify(message.custom, null, 2)}`);
+    }
+
+    return lines.join('\n');
+  };
+
+  const buildDebugTranscript = () => {
+    const debugPayload = [
+      'RiaBot Chat Debug Log',
+      `Exported At: ${new Date().toISOString()}`,
+      `Session ID: ${sessionId || 'unknown'}`,
+      `Message Count: ${messages.length}`,
+      '',
+      ...messages.map((message, index) => `${index + 1}.\n${serializeMessageForDebug(message)}`),
+    ];
+
+    return debugPayload.join('\n\n');
+  };
+
+  const copyTextToClipboard = async (text) => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'absolute';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+  };
+
+  const handleCopyChatLog = async () => {
+    if (messages.length === 0) return;
+
+    try {
+      await copyTextToClipboard(buildDebugTranscript());
+      setCopyStatus('copied');
+      window.setTimeout(() => setCopyStatus('idle'), 2000);
+    } catch (error) {
+      console.error('Failed to copy chat log:', error);
+      setCopyStatus('error');
+      window.setTimeout(() => setCopyStatus('idle'), 2000);
+    }
+  };
+
 
   const handleProfileUpdate = async (formData) => {
     setUpdateError('');
@@ -164,6 +224,9 @@ const ChatInterface = () => {
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           onStartNewChat={startNewChat}
+          onCopyChatLog={handleCopyChatLog}
+          canCopyChatLog={messages.length > 0}
+          copyStatus={copyStatus}
         />
 
         <MessageList

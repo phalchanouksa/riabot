@@ -1,45 +1,84 @@
 version: "3.1"
 
 rules:
-  # ===== GREETING RULE =====
-  - rule: Say hello
+  - rule: Greet user
     steps:
       - intent: greet
       - action: utter_greet
 
-  # ===== GOODBYE RULE =====
   - rule: Say goodbye
     steps:
       - intent: goodbye
       - action: utter_goodbye
 
-  # ===== HELP RULE =====
   - rule: Show help
     steps:
       - intent: ask_help
       - action: utter_help
 
-  # ===== START SURVEY RULE =====
+  - rule: Tell bot name
+    steps:
+      - intent: ask_bot_name
+      - action: utter_bot_name
+
+  - rule: Handle major recommendation question
+    steps:
+      - intent: ask_major_recommendation
+      - action: utter_major_guidance
+
+  - rule: Open FAQ menu
+    steps:
+      - intent: open_faq
+      - action: utter_faq_menu
+
+  - rule: Answer general university question
+    steps:
+      - intent: open_faq_general
+      - action: utter_faq_menu_general
+
+  - rule: Answer faculties question
+    steps:
+      - intent: open_faq_faculties
+      - action: utter_faq_menu_faculties
+
+  - rule: Answer scholarship question
+    steps:
+      - intent: open_faq_scholarships
+      - action: utter_faq_menu_scholarships
+
+  - rule: Answer tuition question
+    steps:
+      - intent: open_faq_tuition
+      - action: utter_faq_menu_tuition
+
+  - rule: Answer contact question
+    steps:
+      - intent: open_faq_contact
+      - action: utter_faq_menu_contact
+
   - rule: Start survey
     steps:
       - intent: start_survey
       - action: action_start_survey
       - action: action_ask_next_question
 
-  # ===== FALLBACK RULE =====
-  - rule: Ask the user to rephrase on fallback
+  - rule: Process survey answer
+    steps:
+      - intent: answer_question
+      - action: action_process_answer
+      - action: action_ask_next_question
+
+  - rule: Show survey results
+    steps:
+      - intent: show_results
+      - action: action_show_results
+
+  - rule: Stop survey
+    steps:
+      - intent: stop_survey
+      - action: action_stop_survey
+
+  - rule: Fallback
     steps:
       - intent: nlu_fallback
       - action: action_default_fallback
-
-  # ===== FAQ RULE (Angkor University Context) =====
-  - rule: respond to FAQs
-    steps:
-      - intent: faq
-      - action: utter_faq
-
-  # ===== CHITCHAT RULE =====
-  - rule: respond to chitchat natively
-    steps:
-      - intent: chitchat
-      - action: utter_chitchat

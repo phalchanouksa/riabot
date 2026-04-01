@@ -6,7 +6,10 @@ const ChatHeader = ({
   onToggleSidebar, 
   chatSessionExpired, 
   onStartNewChat, 
-  onContinueChat 
+  onContinueChat,
+  onCopyChatLog,
+  canCopyChatLog,
+  copyStatus,
 }) => {
   const { t } = useTranslation();
 
@@ -30,6 +33,17 @@ const ChatHeader = ({
           <span></span>
           <span></span>
         </button>
+        <div className="chat-header-actions">
+          <button
+            type="button"
+            className="copy-chat-log-btn"
+            onClick={onCopyChatLog}
+            disabled={!canCopyChatLog}
+            title="Copy chat log for debugging"
+          >
+            {copyStatus === 'copied' ? 'Copied' : 'Copy chat log'}
+          </button>
+        </div>
       </div>
     </>
   );

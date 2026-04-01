@@ -1,57 +1,43 @@
-# Rasa Configuration for RiaBot - Career Counselor Chatbot
-# Uses Rasa as dialogue controller + Qwen for natural language generation
-
 recipe: default.v1
 
-language: en
+language: km
 
 pipeline:
-  # Tokenizer - handles English and native Khmer sentence splitting without spaces
-- name: khmer_tokenizer.KhmerTokenizer
-  intent_tokenization_flag: false
-  intent_split_symbol: "_"
+  - name: khmer_normalizer.KhmerTextNormalizer
+    normalize_latin_case: true
+    normalize_khmer_digits: true
+    collapse_whitespace: true
+    normalize_punctuation: true
 
-  # Featurizers
-- name: RegexFeaturizer
-- name: LexicalSyntacticFeaturizer
-- name: CountVectorsFeaturizer
-- name: CountVectorsFeaturizer
-  analyzer: char_wb
-  min_ngram: 1
-  max_ngram: 4
+  - name: khmer_tokenizer.KhmerTokenizer
+    intent_tokenization_flag: false
+    intent_split_symbol: "_"
 
-  # Intent classification & entity extraction
-- name: DIETClassifier
-  epochs: 100
-  constrain_similarities: true
+  - name: RegexFeaturizer
+  - name: LexicalSyntacticFeaturizer
+  - name: CountVectorsFeaturizer
+  - name: CountVectorsFeaturizer
+    analyzer: char
+    min_ngram: 2
+    max_ngram: 5
 
-  # Entity synonym mapping
-- name: EntitySynonymMapper
+  - name: DIETClassifier
+    epochs: 120
+    constrain_similarities: true
 
-  # Response selection
-- name: ResponseSelector
-  epochs: 100
-  constrain_similarities: true
+  - name: EntitySynonymMapper
 
-  # Fallback classifier for low-confidence intents
-- name: FallbackClassifier
-  threshold: 0.4
-  ambiguity_threshold: 0.1
+  - name: FallbackClassifier
+    threshold: 0.5
+    ambiguity_threshold: 0.08
 
 policies:
-  # Memoization for exact story matches
-- name: MemoizationPolicy
-  max_history: 5
+  - name: MemoizationPolicy
+    max_history: 5
 
-  # Rule-based policy for strict rules
-- name: RulePolicy
-  core_fallback_threshold: 0.3
-  core_fallback_action_name: action_default_fallback
-  enable_fallback_prediction: true
+  - name: RulePolicy
+    core_fallback_threshold: 0.3
+    core_fallback_action_name: action_default_fallback
+    enable_fallback_prediction: true
 
-  # TED for generalized dialogue
-- name: TEDPolicy
-  max_history: 10
-  epochs: 100
-  constrain_similarities: true
 assistant_id: 20260221-134822-deterministic-manuscript

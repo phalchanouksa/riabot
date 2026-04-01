@@ -1,2103 +1,293 @@
 version: "3.1"
 
 nlu:
-  # ===== GREETINGS =====
   - intent: greet
     examples: |
       - hello
       - hi
       - hey
-      - good morning
-      - good evening
-      - sup
-      - what's up
-      - yo
       - hi there
       - hello there
-      - hey there
-      - greetings
+      - hello bot
+      - hi bot
+      - good morning
+      - good evening
+      - ជម្រាបសួរបង
+      - ជម្រាបសួរអ្នកជួយ
+      - សួស្តីជំរាបសួរ
+      - សួស្តី ria bot
+      - ជម្រាបសួរបាទ
       - សួស្តី
       - ជំរាបសួរ
-      - ហេឡូ
-      - ហាយ
-      - ហេឡូវ
-      - សួស្តីបង
-      - សួស្តីអ្នកគ្រូ
-      - សួស្តីលោកគ្រូ
-      - ជម្រាបសួរអ្នកគ្រូ
-      - ជម្រាបសួរលោកគ្រូ
-      - ជំរាបសួរ ទាំងអស់គ្នា
-      - ទិវាសួស្តី អ្នកគ្រូ
-      - ជំរាបសួរ មិត្តភក្តិ
-      - សួស្ដី មិត្តភក្តិ
-      - ហេឡូ
-      - ទិវាសួស្តី លោកគ្រូ
-      - សួស្តី
-      - សួស្ដី អូន
-      - ហាយ អ្នកគ្រូ
-      - ហាយ
-      - សួស្តី អ្នកទាំងឡាយ
       - សួស្ដី
-      - សួស្ដី ចាស
-      - ជំរាបសួរ បង
-      - ហេឡូ អ្នកគ្រូ
-      - អរុណសួស្តី មិត្តភក្តិ
-      - អរុណសួស្តី ទាំងអស់គ្នា
-      - ទិវាសួស្តី មិត្តភក្តិ
-      - រាត្រីសួស្តី
-      - សួស្តី ទាំងអស់គ្នា
-      - សួស្ដី ទាំងអស់គ្នា
-      - រាត្រីសួស្តី ចាស
-      - សួស្ដី លោកគ្រូ
+      - សួស្តីបង
       - សួស្តី bot
-      - សួស្តី អូន
-      - អរុណសួស្តី អ្នកទាំងឡាយ
-      - រាត្រីសួស្តី អូន
-      - ទិវាសួស្តី bot
-      - ទិវាសួស្តី ចាស
-      - ហេឡូ អ្នកទាំងឡាយ
-      - ជំរាបសួរ លោកគ្រូ
-      - ហេឡូ អូន
-      - ហាយ លោកគ្រូ
-      - អរុណសួស្តី អ្នកគ្រូ
-      - សួស្ដី អ្នកគ្រូ
-      - រាត្រីសួស្តី ទាំងអស់គ្នា
-      - សួស្ដី bot
-      - រាត្រីសួស្តី រ៉ូប៊ីណា
-      - ទិវាសួស្តី អ្នកទាំងឡាយ
-      - ជំរាបសួរ
-      - សួស្តី បាទ
-      - ជំរាបសួរ បាទ
-      - ហាយ ចាស
-      - Greetings man
-      - Yo dude
-      - Hello lady
-      - Hey bot
-      - Greetings boss
-      - Yo
-      - Good afternoon
-      - Howdy everyone
-      - Hi mate
-      - Good morning there
-      - Yo there
-      - Greetings RiaBot
-      - Howdy boss
-      - Hi boss
-      - Good morning dude
-      - Yo boss
-      - Hello mate
-      - Hello boss
-      - Hey everyone
-      - Hey Ria
+      - អរុណសួស្តី
 
-  # ===== GOODBYE =====
   - intent: goodbye
     examples: |
       - bye
       - goodbye
       - see you
-      - see you later
-      - take care
       - thanks bye
-      - good night
-      - later
-      - ជម្រាបលា
-      - លាហើយ
-      - អរគុណ
-      - ជួបគ្នាពេលក្រោយ
-      - លា លោកគ្រូ
-      - ជួបគ្នាពេលក្រោយ មិត្ត
-      - ទៅសិនហើយ មិត្ត
-      - ជួបគ្នាពេលក្រោយ ពេលក្រោយជួបគ្នាទៀត
-      - ជម្រាបលា មិត្ត
-      - ទៅសិនហើយ លោកគ្រូ
-      - ទៅសិនហើយ អ្នកគ្រូ
-      - លាហើយ មិត្ត
       - លា
-      - សុំទោសលាហើយ ណាស្ងាត់
-      - ទៅសិនហើយ ណាស្ងាត់
-      - សុំទោសលាហើយ លោកគ្រូ
-      - លាហើយ អ្នកគ្រូ
-      - ជួបគ្នាពេលក្រោយ ណាស្ងាត់
-      - អរគុណ ចុះ ណាស្ងាត់
-      - ជម្រាបលា អ្នកគ្រូ
-      - ជួបគ្នាពេលក្រោយ បង
-      - អរគុណហើយបាយបាយ លោកគ្រូ
-      - លា មិត្ត
-      - ជួបគ្នាពេលក្រោយ អ្នកទាំងអស់គ្នា
-      - អរគុណហើយបាយបាយ ណាស្ងាត់
-      - លាហើយ រ៉ូប៊ីណា
-      - លាហើយ លោកគ្រូ
-      - ជម្រាបលា
-      - លាហើយ
-      - ទៅសិនហើយ អ្នកទាំងអស់គ្នា
-      - សុំទោសលាហើយ អ្នកទាំងអស់គ្នា
-      - លា អ្នកទាំងអស់គ្នា
-      - ជម្រាបលា ពេលក្រោយជួបគ្នាទៀត
-      - អរគុណហើយបាយបាយ មិត្ត
-      - អរគុណហើយបាយបាយ រ៉ូប៊ីណា
-      - ជួបគ្នាពេលក្រោយ អ្នកគ្រូ
-      - អរគុណហើយបាយបាយ បង
-      - សុំទោសលាហើយ រ៉ូប៊ីណា
-      - លា រ៉ូប៊ីណា
-      - អរគុណហើយបាយបាយ
-      - អរគុណ ចុះ
-      - សុំទោសលាហើយ មិត្ត
-      - ទៅសិនហើយ
-      - ជម្រាបលា អ្នកទាំងអស់គ្នា
-      - អរគុណ ចុះ មិត្ត
-      - ទៅសិនហើយ បង
-      - សុំទោសលាហើយ
-      - លា អ្នកគ្រូ
-      - អរគុណ ចុះ អ្នកគ្រូ
-      - លា ណាស្ងាត់
-      - ជម្រាបលា រ៉ូប៊ីណា
-      - សុំទោសលាហើយ អ្នកគ្រូ
-      - ទៅសិនហើយ រ៉ូប៊ីណា
-      - See you later see ya
-      - Good night RiaBot
-      - See you later
-      - Take care RiaBot
-      - Catch you later for now
-      - Farewell my friend
-      - See you later bot
-      - Good night see ya
-      - See you my friend
-      - Goodbye for now
-      - Thanks bye my friend
-      - Goodbye my friend
-      - Take care bot
-      - Bye see ya
-      - Bye RiaBot
-      - See you have a good one
-      - Thanks bye
-      - Bye have a good one
-      - Goodbye have a good one
-      - Thanks bye have a good one
+      - ជំរាបលា
+      - ជួបគ្នាពេលក្រោយ
+      - អរគុណលា
 
-  # ===== AFFIRM =====
-  - intent: affirm
+  - intent: ask_help
     examples: |
-      - yes
-      - yeah
-      - yep
-      - sure
-      - ok
-      - okay
-      - of course
-      - definitely
-      - let's go
-      - let's do it
-      - continue
-      - next
-      - yes please
-      - បាទ
-      - ចាស
-      - យល់ព្រម
-      - បាទ ណាស់
-      - អូខេ យកអាហ្នឹង
-      - ចាស យកអាហ្នឹង
-      - ច្បាស់លាស់ តោះ
-      - យល់ព្រម ណាស់
-      - យល់ព្រម
-      - អូខេ អ្នកគ្រូ
-      - ពិតជាត្រូវ យកអាហ្នឹង
-      - បាទ ទៅមុខទៀត
-      - ពិតមែន ណាស់
-      - យល់ព្រម តោះ
-      - ពិតមែន មែន
-      - ច្បាស់លាស់ ហើយ
-      - យល់ស្រប មែន
-      - ចាស ហើយ
-      - យល់ព្រម ទៅមុខទៀត
-      - ច្បាស់លាស់ ណាស់
-      - ត្រូវ
-      - ចាស អ្នកគ្រូ
-      - យល់ស្រប តោះ
-      - បាន អ្នកគ្រូ
-      - ព្រម ហើយ
-      - ពិតមែន ទៅមុខទៀត
-      - អូខេ បាទ/ចាស
-      - បាទ
-      - អូខេ មែន
-      - ពិតមែន យកអាហ្នឹង
-      - បាន
-      - ពិតមែន បាទ/ចាស
-      - ច្បាស់លាស់ អ្នកគ្រូ
-      - ពិតមែន តោះ
-      - បាន តោះ
-      - ច្បាស់លាស់
-      - ត្រូវ ទៅមុខទៀត
-      - ត្រូវ មែន
-      - បាន មែន
-      - យល់ព្រម មែន
-      - ព្រម តោះ
-      - ពិតមែន
-      - យល់ព្រម អ្នកគ្រូ
-      - ត្រូវ បាទ/ចាស
-      - យល់ស្រប
-      - ច្បាស់លាស់ ទៅមុខទៀត
-      - យល់ស្រប អ្នកគ្រូ
-      - បាទ ហើយ
-      - ត្រូវ តោះ
-      - យល់ព្រម យកអាហ្នឹង
-      - បាន ទៅមុខទៀត
-      - បាន ណាស់
-      - ត្រូវ យកអាហ្នឹង
-      - Okay indeed
-      - Continue
-      - Of course yes I am
-      - Agreed yes I am
-      - Yep yes I am
-      - Agreed
-      - Yes indeed
-      - Let's do it yes I am
-      - Right indeed
-      - Let's do it let's go
-      - Yes for sure
-      - Right I agree
-      - Agreed for sure
-      - Yes I agree
-      - Yep let's go
-      - Absolutely indeed
-      - Continue please
-      - Absolutely let's go
-      - Ok let's go
-      - Absolutely yes I am
+      - help
+      - can you help me
+      - what can you do
+      - menu
+      - what can you help with
+      - what can i ask you
+      - show me the menu
+      - what do you do
+      - អ្នកអាចជួយអ្វីបាន
+      - អាចជួយអីបានខ្លះ
+      - មានអ្វីឲ្យជ្រើសខ្លះ
+      - ខ្ញុំអាចសួរអ្វីបានខ្លះ
+      - bot នេះធ្វើអ្វីបានខ្លះ
+      - តើអ្នកអាចជួយអ្វីខ្លះ
+      - ជួយខ្ញុំផង
+      - អាចជួយអ្វីបានខ្លះ
+      - អ្នកអាចធ្វើអ្វីបានខ្លះ
+      - មានអ្វីឱ្យជ្រើស
+      - ជំនួយ
 
-  # ===== DENY =====
-  - intent: deny
+  - intent: ask_bot_name
     examples: |
-      - no
-      - nope
-      - not really
-      - no thanks
-      - I don't think so
-      - nah
-      - no way
-      - ទេ
-      - មិនទេ
-      - អត់ទេ
-      - មិនយល់ព្រម អរគុណ
-      - មិនយល់ព្រម អត់មាន
-      - ទេ
-      - ចាំពេលក្រោយ ទេ
-      - ទេ អត់ចង់
-      - អត់ទេ ទេ
-      - អត់ ទេអ្នកគ្រូ
-      - ខុសហើយ អត់មាន
-      - មិនយល់ព្រម ទេ
-      - អត់
-      - មិនទេ ទេ
-      - មិនទេ ទេលោកគ្រូ
-      - អត់ទេ
-      - អត់ទេ បង
-      - ខុសហើយ អត់ទេបង
-      - អត់ អត់ទេបង
-      - ខុសហើយ ទេលោកគ្រូ
-      - អត់ទេ អត់មាន
-      - ទេ ទេអ្នកគ្រូ
-      - ទេ បង
-      - ចាំពេលក្រោយ អត់ចង់
-      - ខុសហើយ ទេ
-      - មិនមែនទេ បង
-      - មិនត្រូវ ទេលោកគ្រូ
-      - មិនមែនទេ ទេអ្នកគ្រូ
-      - ចាំពេលក្រោយ អត់មាន
-      - មិនយល់ព្រម អត់ទេបង
-      - ចាំពេលក្រោយ ទេលោកគ្រូ
-      - មិនមែនទេ អត់មាន
-      - មិនទេ អត់មាន
-      - មិនត្រូវ
-      - មិនបាច់ទេ អត់មាន
-      - អត់ទេ អរគុណ
-      - ចាំពេលក្រោយ
-      - មិនទេ បង
-      - ខុសហើយ ទេអ្នកគ្រូ
-      - មិនយល់ព្រម ទេអរគុណច្រើន
-      - មិនទេ ទេអ្នកគ្រូ
-      - ខុសហើយ ទេអរគុណច្រើន
-      - មិនយល់ព្រម អត់ចង់
-      - ខុសហើយ បង
-      - មិនត្រូវ អរគុណ
-      - មិនទេ
-      - មិនមែនទេ អត់ទេបង
-      - មិនបាច់ទេ អរគុណ
-      - មិនត្រូវ ទេអរគុណច្រើន
-      - អត់ទេ ទេលោកគ្រូ
-      - អត់ បង
-      - មិនទេ អត់ចង់
-      - មិនយល់ព្រម ទេអ្នកគ្រូ
-      - No thanks at all
-      - I don't think so at all
-      - Negative I'll pass
-      - No sorry
-      - Negative thank you
-      - Negative maybe next time
-      - Nope at all
-      - Nah I'll pass
-      - Nope sorry
-      - Nah
-      - No thanks I'll pass
-      - Not really I'll pass
-      - No way thank you
-      - Nah at all
-      - No thanks maybe next time
-      - Negative sorry
-      - I disagree maybe next time
-      - I disagree
-      - I disagree I'll pass
-      - Nope maybe next time
+      - what is your name
+      - what's your name
+      - what its name
+      - what is its name
+      - who are you
+      - your name
+      - bot name
+      - what should i call you
+      - who am i talking to
+      - what do people call you
+      - tell me your name
+      - are you riabot
+      - អ្នកឈ្មោះអ្វីដែរ
+      - bot នេះឈ្មោះអ្វី
+      - តើ bot ឈ្មោះអ្វី
+      - អ្នកជានរណាដែរ
+      - ខ្ញុំកំពុងនិយាយជាមួយនរណា
+      - ឈ្មោះអ្នកអ្វី
+      - ឈ្មោះអី
+      - ឈ្មោះអ្វី
+      - អ្នកឈ្មោះអ្វី
+      - bot ឈ្មោះអ្វី
+      - តើអ្នកឈ្មោះអ្វី
+      - តើឈ្មោះអ្វី
+      - អ្នកជាអ្នកណា
 
-  # ===== START SURVEY =====
+  - intent: ask_major_recommendation
+    examples: |
+      - what major should i study
+      - which major should i choose
+      - which major fits me
+      - what should i study at university
+      - can you recommend a major for me
+      - help me choose a major
+      - what subject should i major in
+      - តើខ្ញុំគួររៀនជំនាញអ្វី
+      - តើខ្ញុំគូររៀនជំនាញអ្វី
+      - ខ្ញុំគួររៀនជំនាញអ្វី
+      - ខ្ញុំគួរជ្រើសជំនាញអ្វី
+      - ខ្ញុំសមនឹងជំនាញអ្វី
+      - អាចណែនាំជំនាញឲ្យខ្ញុំបានទេ
+      - ជួយណែនាំជំនាញឲ្យខ្ញុំផង
+      - ខ្ញុំគួរជ្រើសរៀនអ្វី
+      - តើជំនាញណាសមនឹងខ្ញុំ
+      - តើខ្ញុំសមនឹងរៀនអ្វី
+      - ខ្ញុំគួររៀនមុខជំនាញអ្វី
+      - ចង់ដឹងថាគួររៀនជំនាញអ្វី
+      - ណែនាំ major ឲ្យខ្ញុំផង
+
   - intent: start_survey
     examples: |
       - start
       - start survey
+      - start test
       - begin
-      - begin assessment
-      - I want to find my major
-      - help me choose a major
-      - what major should I study
-      - career assessment
-      - start the test
-      - take the survey
-      - I want to take the survey
-      - find my career
-      - recommend a major
-      - what should I study
-      - I need career advice
-      - help me find a career
+      - take the test
+      - begin the survey
+      - let me take the major test
+      - open the test
+      - start the recommendation test
+      - បើកតេស្ត
+      - ចាប់ផ្តើមសំណួរ
+      - សុំចាប់ផ្តើមតេស្ត
+      - ខ្ញុំចង់សាកតេស្ត
+      - ចង់ធ្វើតេស្តណែនាំជំនាញ
+      - ចង់ចាប់ផ្តើមឥឡូវ
       - ចាប់ផ្តើម
-      - ចាប
-      - ចាប់
+      - ចាប់ផ្តើមតេស្ត
+      - ចង់ធ្វើតេស្ត
+      - ខ្ញុំចង់ធ្វើតេស្ត
+      - ចង់ដឹងជំនាញសមរម្យ
+      - ធ្វើតេស្តណែនាំជំនាញ
 
-      - ជួយខ្ញុំស្វែងរកជំនាញ
-      - ខ្ញុំចង់ស្វែងរកជំនាញសិក្សា
-      - តេស្តសមត្ថភាព ភ្លាមទៅ
-      - ចូលស្តង់មតិ ឥឡូវនេះ
-      - ចាប់ផ្តើម ណាបង
-      - តេស្តសមត្ថភាព
-      - ស្វែងរកជំនាញ ថ្ងៃនេះ
-      - ធ្វើតេស្ត តោះ
-      - ស្វែងរកជំនាញ ឥឡូវនេះ
-      - ស្វែងរកជំនាញ ភ្លាមទៅ
-      - ធ្វើតេស្ត ថ្ងៃនេះ
-      - តេស្តសមត្ថភាព តោះ
-      - ខ្ញុំចង់ស្វែងរកជំនាញ សូមជួយ
-      - ជួយណែនាំមុខវិជ្ជា បន្តិច
-      - ជួយខ្ញុំរើសរៀនអ្វី ថ្ងៃនេះ
-      - ចាប់ផ្តើម ថ្ងៃនេះ
-      - ជួយខ្ញុំរើសរៀនអ្វី តោះ
-      - ជួយណែនាំមុខវិជ្ជា តោះ
-      - ជួយណែនាំមុខវិជ្ជា ណាបង
-      - ចាប់ផ្តើម តោះ
-      - ធ្វើតេស្ត
-      - ចូលស្តង់មតិ តោះ
-      - ជួយណែនាំមុខវិជ្ជា ឥឡូវនេះ
-      - ស្វែងរកជំនាញ
-      - ចូលស្តង់មតិ ភ្លាមទៅ
-      - ជួយណែនាំមុខវិជ្ជា យកឥឡូវនេះ
-      - ខ្ញុំចង់ស្វែងរកជំនាញ ណាបង
-      - ធ្វើតេស្ត សូមជួយ
-      - ធ្វើតេស្ត អោយខ្ញុំ
-      - ជួយណែនាំមុខវិជ្ជា
-      - ខ្ញុំចង់ស្វែងរកជំនាញ ភ្លាមទៅ
-      - ចូលស្តង់មតិ អោយខ្ញុំ
-      - ចូលស្តង់មតិ ថ្ងៃនេះ
-      - ស្វែងរកជំនាញ ណាបង
-      - ជួយណែនាំមុខវិជ្ជា សូមជួយ
-      - ធ្វើតេស្ត បន្តិច
-      - ស្វែងរកជំនាញ អោយខ្ញុំ
-      - ស្វែងរកជំនាញ បន្តិច
-      - ចាប់ផ្តើម សូមជួយ
-      - ខ្ញុំចង់ស្វែងរកជំនាញ បន្តិច
-      - ជួយណែនាំមុខវិជ្ជា អោយខ្ញុំ
-      - ជួយណែនាំមុខវិជ្ជា ថ្ងៃនេះ
-      - ចាប់ផ្តើម ភ្លាមទៅ
-      - ខ្ញុំចង់ស្វែងរកជំនាញ យកឥឡូវនេះ
-      - តេស្តសមត្ថភាព ថ្ងៃនេះ
-      - ស្វែងរកជំនាញ សូមជួយ
-      - ចាប់ផ្តើម បន្តិច
-      - ខ្ញុំចង់ស្វែងរកជំនាញ តោះ
-      - ខ្ញុំចង់ស្វែងរកជំនាញ ថ្ងៃនេះ
-      - ចូលស្តង់មតិ សូមជួយ
-      - ស្វែងរកជំនាញ យកឥឡូវនេះ
-      - ខ្ញុំចង់ស្វែងរកជំនាញ
-      - Find my true calling please
-      - Begin today
-      - Help me find a major right away
-      - What should I study right away
-      - Find my true calling
-      - Begin let's start
-      - What should I study today
-      - What should I study let's start
-      - Start now
-      - Start survey quickly
-      - I need advice today
-      - Find my true calling quickly
-      - Take the test right away
-      - Start survey please
-      - Start right away
-      - Career assessment let's start
-      - I need advice let's start
-      - What should I study quickly
-      - Help me find a major
-      - I need advice please
-      - ខ្ញុំចង់ដឹងថាខ្ញុំរៀនជំនាញអីបានសម
-      - ហាក ចង់ដឹងថាខ្ញុំគួររៀនជំនាញអ្វី
-      - ចង់ដឹងថាខ្ញុំគួររៀនអ្វី
-      - តើខ្ញុំគួររៀនអ្វីទើបល្អ
-      - ខ្ញុំគួររៀនជំនាញអី
-      - ខ្ញុំចង់ដឹងថាតើខ្ញុំគូររៀនជំនាញអី ជួយតិចបានអត់
-      - ជួយតិចបានអត់ ខ្ញុំចង់ដឹងថាគួរបន្តរៀនខាងអី
-      - ណែនាំជំនាញអោយខ្ញុំណាបង
-      - ចង់ដឹងថាត្រូវរៀនមហាវិទ្យាល័យខាងអី
-      - ជួយរើសជំនាញអោយខ្ញុំបន្តិច
-      - តើខ្ញុំស័ក្តិសមនឹងជំនាញអ្វី
-      - ជួយមើលអោយបន្តិចថាខ្ញុំគួររៀនអ្វី
+  - intent: stop_survey
+    examples: |
+      - stop
+      - stop survey
+      - pause
+      - cancel
+      - pause the test
+      - stop the test for now
+      - cancel the survey
+      - hold on the test
+      - ឈប់តេស្ត
+      - សុំផ្អាកសិន
+      - បញ្ឈប់តេស្តសិន
+      - ខ្ញុំសុំឈប់សិន
+      - មិនចង់បន្តតេស្តទេ
+      - ផ្អាកតេស្តមុនសិន
+      - បញ្ឈប់
+      - ឈប់សិន
+      - ផ្អាកសិន
+      - មិនបន្តទេ
 
-  # ===== ANSWER QUESTION (with entity extraction) =====
+  - intent: show_results
+    examples: |
+      - show result
+      - show results
+      - my result
+      - survey result
+      - show my test result
+      - can i see the result now
+      - what is my recommendation
+      - show recommendation
+      - បង្ហាញលទ្ធផលខ្ញុំ
+      - ខ្ញុំចង់មើលលទ្ធផលឥឡូវ
+      - មើលលទ្ធផលតេស្ត
+      - លទ្ធផលខ្ញុំជាអ្វី
+      - សុំបង្ហាញលទ្ធផល
+      - មើល recommendation
+      - លទ្ធផល
+      - បង្ហាញលទ្ធផល
+      - ចង់មើលលទ្ធផល
+      - លទ្ធផលតេស្ត
+
+  - intent: open_faq
+    examples: |
+      - faq
+      - university information
+      - school information
+      - tell me about angkor university
+      - information about the university
+      - university details
+      - information about angkor university
+      - tell me school information
+      - i want university information
+      - ខ្ញុំចង់ដឹងពីសាលា
+      - សូមផ្តល់ព័ត៌មានសាលា
+      - មានព័ត៌មានសាលាអ្វីខ្លះ
+      - ចង់សួរព័ត៌មានសាកលវិទ្យាល័យ
+      - ខ្ញុំចង់មើល faq
+      - ព័ត៌មានអំពីសាកលវិទ្យាល័យអង្គរ
+      - ព័ត៌មានសាលា
+      - ព័ត៌មានសាកលវិទ្យាល័យ
+      - ខ្ញុំចង់សួរអំពីសាលា
+      - ខ្ញុំចង់ដឹងព័ត៌មានសាកលវិទ្យាល័យ
+      - សួរព័ត៌មានអង្គរ
+
+  - intent: open_faq_general
+    examples: |
+      - general information
+      - about angkor university
+      - tell me about AU
+      - what is angkor university
+      - when was angkor university founded
+      - ព័ត៌មានទូទៅ
+      - សាកលវិទ្យាល័យអង្គរជាសាលាអ្វី
+      - សាលានេះបង្កើតឆ្នាំណា
+      - អំពីសាកលវិទ្យាល័យអង្គរ
+      - ប្រវត្តិសាកលវិទ្យាល័យអង្គរ
+
+  - intent: open_faq_faculties
+    examples: |
+      - faculties
+      - departments
+      - majors at angkor university
+      - what faculties do you have
+      - available programs
+      - មហាវិទ្យាល័យ
+      - មានមហាវិទ្យាល័យអ្វីខ្លះ
+      - សាលាមានជំនាញអ្វីខ្លះ
+      - មានផ្នែកអ្វីខ្លះ
+      - កម្មវិធីសិក្សាមានអ្វីខ្លះ
+
+  - intent: open_faq_scholarships
+    examples: |
+      - scholarship
+      - scholarships
+      - do you have scholarship
+      - scholarship information
+      - scholarship details
+      - any scholarship available
+      - tell me about scholarship
+      - how does the scholarship work
+      - អាហារូបករណ៍មានអ្វីខ្លះ
+      - មានអាហារូបករណ៍ប៉ុន្មានប្រភេទ
+      - ខ្ញុំចង់ដឹងអំពីអាហារូបករណ៍
+      - ព័ត៌មានអាហារូបករណ៍
+      - មាន scholarship ទេ
+      - អាហារូបករណ៍បញ្ចុះតម្លៃប៉ុន្មាន
+      - អាហារូបករណ៍
+      - មានអាហារូបករណ៍ទេ
+      - ព័ត៌មានអាហារូបករណ៍
+      - ខ្ញុំចង់ដឹងអំពីអាហារូបករណ៍
+      - និទ្ទេស A
+      - និទ្ទេស B
+      - និទ្ទេស C
+      - បើបាននិទ្ទេស A
+      - បើបាននិទ្ទេស B
+      - បើខ្ញុំបាននិទ្ទេស A មានអាហារូបករណ៍ទេ
+      - បើខ្ញុំបាននិទ្ទេស B មានអាហារូបករណ៍ប៉ុន្មាន
+      - និទ្ទេស A បានប៉ុន្មានភាគរយ
+      - និទ្ទេស B បានប៉ុន្មានភាគរយ
+      - អាហារូបករណ៍និទ្ទេស A
+      - អាហារូបករណ៍និទ្ទេស B
+
+  - intent: open_faq_tuition
+    examples: |
+      - tuition fee
+      - tuition
+      - school fee
+      - how much is the fee
+      - cost of studying
+      - តម្លៃសិក្សា
+      - ថ្លៃសិក្សាប៉ុន្មាន
+      - ព័ត៌មានថ្លៃសិក្សា
+      - ចង់ដឹងតម្លៃសិក្សា
+
+  - intent: open_faq_contact
+    examples: |
+      - contact
+      - contact information
+      - phone number
+      - address
+      - where is angkor university
+      - ទំនាក់ទំនង
+      - លេខទូរស័ព្ទ
+      - អាសយដ្ឋានសាលា
+      - សាលានៅឯណា
+      - ទីតាំងសាកលវិទ្យាល័យ
+
   - intent: answer_question
     examples: |
+      - [0](answer_value)
       - [1](answer_value)
       - [2](answer_value)
       - [3](answer_value)
       - [4](answer_value)
-      - [0](answer_value)
-      - my answer is [1](answer_value)
-      - my answer is [2](answer_value)
-      - my answer is [3](answer_value)
-      - my answer is [4](answer_value)
-      - my answer is [0](answer_value)
-      - I'd say [1](answer_value)
-      - I'd say [2](answer_value)
-      - I'd say [3](answer_value)
-      - I'd say [4](answer_value)
-      - I choose [1](answer_value)
-      - I choose [2](answer_value)
-      - I choose [3](answer_value)
-      - I choose [4](answer_value)
-      - I choose [0](answer_value)
-      - it's [1](answer_value)
-      - it's [2](answer_value)
-      - it's [3](answer_value)
-      - it's [4](answer_value)
-      - [1](answer_value) please
-      - [2](answer_value) for sure
-      - definitely [4](answer_value)
-      - I think [3](answer_value)
-      - around [2](answer_value)
-      - probably [3](answer_value)
-      - លេខ [0](answer_value)
-      - ចម្លើយរបស់ខ្ញុំគឺ [1](answer_value)
-      - ខ្ញុំរើសយក [4](answer_value)
-      - ជូនជា [0](answer_value)
-      - ជូនជា [4](answer_value)
-      - លេខ [4](answer_value)
-      - ជូនជា [2](answer_value)
-      - ខ្ញុំគិតថា [1](answer_value)
-      - យក [2](answer_value)
-      - ខ្ញុំថា [3](answer_value)
-      - ខ្ញុំគិតថា [2](answer_value)
-      - ចម្លើយរបស់ខ្ញុំគឺ [4](answer_value)
-      - ខ្ញុំរើសយក [0](answer_value)
-      - ចម្លើយរបស់ខ្ញុំគឺ [3](answer_value)
-      - ខ្ញុំរើសយក [3](answer_value)
-      - ចម្លើយរបស់ខ្ញុំគឺ [0](answer_value)
-      - ជូនជា [1](answer_value)
-      - ខ្ញុំគិតថា [0](answer_value)
-      - ជូនជា [3](answer_value)
-      - ប្រាកដជាយក [1](answer_value)
-      - ខ្ញុំថា [4](answer_value)
-      - យក [4](answer_value)
-      - ចម្លើយទី [3](answer_value)
-      - ប្រាកដជាយក [4](answer_value)
-      - ខ្ញុំថា [1](answer_value)
-      - ចម្លើយទី [2](answer_value)
-      - ចម្លើយទី [0](answer_value)
-      - ចម្លើយទី [4](answer_value)
-      - ដាច់ខាតយក [0](answer_value)
-      - លេខ [1](answer_value)
-      - ខ្ញុំថា [0](answer_value)
-      - យក [0](answer_value)
-      - ចម្លើយរបស់ខ្ញុំគឺ [2](answer_value)
-      - ដាច់ខាតយក [4](answer_value)
-      - ខ្ញុំថា [2](answer_value)
-      - ប្រាកដជាយក [3](answer_value)
-      - ខ្ញុំរើសយក [1](answer_value)
-      - ចម្លើយទី [1](answer_value)
-      - ដាច់ខាតយក [2](answer_value)
-      - យក [3](answer_value)
-      - ប្រាកដជាយក [0](answer_value)
-      - លេខ [3](answer_value)
-      - ប្រាកដជាយក [2](answer_value)
-      - ខ្ញុំគិតថា [3](answer_value)
-      - លេខ [2](answer_value)
-      - យក [1](answer_value)
-      - ខ្ញុំរើសយក [2](answer_value)
-      - ដាច់ខាតយក [1](answer_value)
-      - ដាច់ខាតយក [3](answer_value)
-      - ខ្ញុំគិតថា [4](answer_value)
-      - I will select [2](answer_value)
-      - I will select [4](answer_value)
-      - I think [2](answer_value)
-      - Definitely [1](answer_value)
-      - My answer is [3](answer_value)
-      - Pick [3](answer_value)
-      - I'd pick [4](answer_value)
-      - Selecting [3](answer_value)
-      - Let's go with [1](answer_value)
-      - I think [3](answer_value)
-      - I choose [0](answer_value)
-      - Selecting [1](answer_value)
-      - Let's go with [2](answer_value)
-      - Pick [4](answer_value)
-      - Pick [0](answer_value)
-      - I'd pick [2](answer_value)
-      - Pick [1](answer_value)
-      - I think [0](answer_value)
-      - My answer is [4](answer_value)
-      - I think [1](answer_value)
 
-  # ===== ASK EXPLAIN =====
-  - intent: ask_explain
-    examples: |
-      - why
-      - why this major
-      - explain
-      - tell me more
-      - why do you recommend this
-      - can you explain
-      - how did you decide
-      - what's the reasoning
-      - why not something else
-      - explain the recommendation
-      - ហេតុអ្វី
-      - ពន្យល់ផង
-      - ពន្យល់បន្តិចមក លោកគ្រូ
-      - មានអត្ថន័យម៉េច ប្រាប់លម្អិត
-      - ហេតុអី? អ្នកគ្រូ
-      - ហេតុអី?
-      - ហេតុអ្វី សូមមេត្តា
-      - ហេតុអី? សូមមេត្តា
-      - ម៉េចចឹង លោកគ្រូ
-      - ហេតុអី? ចង់ដឹងណាស់
-      - អាចពន្យល់បានទេ ប្រាប់លម្អិត
-      - ម៉េចក៏រើសនេះ លោកគ្រូ
-      - ពន្យល់បន្តិចមក ប្រាប់លម្អិត
-      - ហេតុអ្វី ចង់ដឹងណាស់
-      - ហេតុអ្វី ប្រាប់លម្អិត
-      - សុំការពន្យល់ លោកគ្រូ
-      - ម៉េចក៏រើសនេះ សូមមេត្តា
-      - អាចពន្យល់បានទេ ហ្នឹង
-      - សុំការពន្យល់ អ្នកគ្រូ
-      - សុំការពន្យល់ បងប្អូន
-      - ហេតុអ្វី បងប្អូន
-      - ហេតុអី? លោកគ្រូ
-      - សុំការពន្យល់ ប្រាប់លម្អិត
-      - ហេតុអ្វី លោកគ្រូ
-      - ម៉េចក៏រើសនេះ ប្រាប់លម្អិត
-      - ហេតុអី? បងប្អូន
-      - ម៉េចចឹង ប្រាប់លម្អិត
-      - ពន្យល់បន្តិចមក សូមមេត្តា
-      - អាចពន្យល់បានទេ សូមមេត្តា
-      - អាចពន្យល់បានទេ លោកគ្រូ
-      - ហេតុអី? ប្រាប់លម្អិត
-      - ហេតុអី? ហ្នឹង
-      - មានអត្ថន័យម៉េច លោកគ្រូ
-      - ពន្យល់បន្តិចមក បងប្អូន
-      - ពន្យល់ផង ប្រាប់ឲ្យក្បោះក្បាយ
-      - ពន្យល់ផង ប្រាប់លម្អិត
-      - ពន្យល់បន្តិចមក ហ្នឹង
-      - ម៉េចចឹង អ្នកគ្រូ
-      - ម៉េចចឹង សូមមេត្តា
-      - ម៉េចចឹង បងប្អូន
-      - ម៉េចក៏រើសនេះ ចង់ដឹងណាស់
-      - ម៉េចចឹង
-      - ហេតុអ្វី អ្នកគ្រូ
-      - ពន្យល់បន្តិចមក
-      - ពន្យល់ផង ចង់ដឹងណាស់
-      - សុំការពន្យល់ ប្រាប់ឲ្យក្បោះក្បាយ
-      - អាចពន្យល់បានទេ បងប្អូន
-      - ពន្យល់ផង
-      - ម៉េចចឹង ហ្នឹង
-      - ម៉េចចឹង ចង់ដឹងណាស់
-      - ម៉េចចឹង ប្រាប់ឲ្យក្បោះក្បាយ
-      - ម៉េចក៏រើសនេះ បងប្អូន
-      - Tell me more more
-      - Tell me more
-      - Details a bit more context
-      - Can you explain can you elaborate
-      - Can you explain to me
-      - Explain more
-      - Why to me
-      - Expound
-      - Can you explain more
-      - Why this one please
-      - Details more
-      - Give me details a bit more context
-      - Why do you say that to me
-      - Can you explain
-      - Details
-      - Why this one can you elaborate
-      - Expound more
-      - Explain a bit more context
-      - Expound a bit more context
-      - Expound can you elaborate
-      - ពន្យល់តិចមក
-      - ពន្យល់តិចមកចឹង
-      - ពន្យល់មក
-      - ពន្យល់ផងចឹង
-      - ពន្យល់អោយខ្ញុំផង
-      - ពន្យល់ឱ្យខ្ញុំដឹងផង
-      - ហេតុអ្វីបានជាចឹង
-      - ម៉េចបានជាចឹង
-      - ម៉េចក៏រើសជំនាញនេះ
-      - ពន្យល់ពីលទ្ធផល
-      - ពន្យល់ពីលទ្ធផលមក
-      - ប្រាប់ខ្ញុំពីមូលហេតុ
-      - ពន្យល់បន្ថែម
-      - ពន្យល់បន្ថែមផង
-      - ហេតុអ្វីខ្ញុំគួររៀនជំនាញនេះ
-      - explain please
-      - why this result
-      - explain the result
-      - why did you choose this
-
-  # ===== ASK ABOUT A SPECIFIC MAJOR =====
-  - intent: ask_about_major
-    examples: |
-      - tell me about [IT](major_name)
-      - what is [Agriculture](major_name) major
-      - [Business](major_name) major
-      - what do [Education](major_name) students study
-      - tell me about [Finance](major_name)
-      - what careers are in [Health](major_name)
-      - what is [Arts](major_name)
-      - describe [Science](major_name) major
-      - [Law](major_name) career options
-      - what about [Architecture](major_name)
-      - តើការសិក្សាអំពីរ [ច្បាប់](major_name)
-      - ធ្លាប់រៀន [វិស្វកម្ម](major_name)
-      - ធ្លាប់រៀន [ពេទ្យ](major_name)
-      - តើជំនាញ [ពេទ្យ](major_name)
-      - ប្រាប់ខ្ញុំអំពីមុខវិជ្ជា [វិស្វកម្ម](major_name)
-      - ឱ្យខ្ញុំស្គាល់ពី [ច្បាប់](major_name)
-      - មុខវិជ្ជា [ពេទ្យ](major_name)
-      - និយាយរឿងជំនាញ [ច្បាប់](major_name)
-      - និយាយរឿងជំនាញ [គណនេយ្យ](major_name)
-      - ធ្លាប់រៀន [ច្បាប់](major_name)
-      - មុខវិជ្ជា [ធុរកិច្ច](major_name)
-      - និយាយរឿងជំនាញ [វិស្វកម្ម](major_name)
-      - ឱ្យខ្ញុំស្គាល់ពី [ទេសចរណ៍](major_name)
-      - តើជំនាញ [កសិកម្ម](major_name)
-      - មុខវិជ្ជា [IT](major_name)
-      - និយាយរឿងជំនាញ [កសិកម្ម](major_name)
-      - ធ្លាប់រៀន [ធុរកិច្ច](major_name)
-      - ធ្លាប់រៀន [ទេសចរណ៍](major_name)
-      - ឱ្យខ្ញុំស្គាល់ពី [វិស្វកម្ម](major_name)
-      - តើការសិក្សាអំពីរ [កសិកម្ម](major_name)
-      - ឱ្យខ្ញុំស្គាល់ពី [ធុរកិច្ច](major_name)
-      - ប្រាប់ខ្ញុំអំពីមុខវិជ្ជា [ច្បាប់](major_name)
-      - ឱ្យខ្ញុំស្គាល់ពី [គណនេយ្យ](major_name)
-      - ឱ្យខ្ញុំស្គាល់ពី [IT](major_name)
-      - និយាយរឿងជំនាញ [ធុរកិច្ច](major_name)
-      - តើការសិក្សាអំពីរ [ធុរកិច្ច](major_name)
-      - ប្រាប់ខ្ញុំអំពីមុខវិជ្ជា [IT](major_name)
-      - តើការសិក្សាអំពីរ [ពេទ្យ](major_name)
-      - ប្រាប់ខ្ញុំអំពីមុខវិជ្ជា [គណនេយ្យ](major_name)
-      - មុខវិជ្ជា [វិស្វកម្ម](major_name)
-      - មុខវិជ្ជា [ទេសចរណ៍](major_name)
-      - ប្រាប់ខ្ញុំអំពីមុខវិជ្ជា [ពេទ្យ](major_name)
-      - ប្រាប់ខ្ញុំអំពីមុខវិជ្ជា [កសិកម្ម](major_name)
-      - តើជំនាញ [ធុរកិច្ច](major_name)
-      - តើជំនាញ [IT](major_name)
-      - និយាយរឿងជំនាញ [ទេសចរណ៍](major_name)
-      - មុខវិជ្ជា [ច្បាប់](major_name)
-      - តើជំនាញ [វិស្វកម្ម](major_name)
-      - ធ្លាប់រៀន [កសិកម្ម](major_name)
-      - និយាយរឿងជំនាញ [IT](major_name)
-      - ធ្លាប់រៀន [គណនេយ្យ](major_name)
-      - តើជំនាញ [ច្បាប់](major_name)
-      - ឱ្យខ្ញុំស្គាល់ពី [កសិកម្ម](major_name)
-      - ប្រាប់ខ្ញុំអំពីមុខវិជ្ជា [ធុរកិច្ច](major_name)
-      - តើការសិក្សាអំពីរ [គណនេយ្យ](major_name)
-      - ប្រាប់ខ្ញុំអំពីមុខវិជ្ជា [ទេសចរណ៍](major_name)
-      - ធ្លាប់រៀន [IT](major_name)
-      - ឱ្យខ្ញុំស្គាល់ពី [ពេទ្យ](major_name)
-      - តើជំនាញ [ទេសចរណ៍](major_name)
-      - តើជំនាញ [គណនេយ្យ](major_name)
-      - Information about [Agriculture](major_name)
-      - Give info on [Business](major_name)
-      - Explain [Business](major_name)
-      - Tell me about [IT](major_name) major
-      - Describe the [Arts](major_name) degree
-      - What is [Engineering](major_name)
-      - Give info on [Arts](major_name) degree
-      - Information about [Engineering](major_name)
-      - Give info on [Medicine](major_name)
-      - Explain [IT](major_name) major
-      - Describe the [Law](major_name)
-      - What is [Business](major_name)
-      - What is [Law](major_name)
-      - Information about [Business](major_name)
-      - Information about [Arts](major_name) degree
-      - Describe the [IT](major_name) major
-      - Describe the [Medicine](major_name)
-      - What is [Agriculture](major_name)
-      - Information about [Education](major_name)
-      - What is [Medicine](major_name)
-
-  # ===== ASK HELP =====
-  - intent: ask_help
-    examples: |
-      - help
-      - what can you do
-      - how does this work
-      - instructions
-      - guide me
-      - what are my options
-      - ជួយ
-      - ជួយខ្ញុំផង
-      - ធ្វើដូចម្តេចផ្តើម ប្រាប់ខ្ញុំមក
-      - ឱ្យខ្ញុំធ្វើអ្វី តើត្រូវធ្វើអ្វី
-      - ជួយខ្ញុំផង បន្តិច
-      - ធ្វើដូចម្តេចផ្តើម
-      - ជួយខ្ញុំ ជួយខ្ញុំគិតគូរផង
-      - ជួយផង រ៉ូប៊ីណា
-      - ជួយខ្ញុំ តើត្រូវធ្វើអ្វី
-      - សុំទានកម្លាំងជួយ អ្នកគ្រូ
-      - ខ្ញុំទាល់គំនិត រ៉ូប៊ីណា
-      - ធ្វើដូចម្តេចផ្តើម បង
-      - ជួយខ្ញុំ បន្តិច
-      - ជួយផង ជួយខ្ញុំគិតគូរផង
-      - ជួយខ្ញុំផង អ្នកគ្រូ
-      - ធ្វើដូចម្តេចផ្តើម ជួយខ្ញុំគិតគូរផង
-      - ខ្ញុំទាល់គំនិត ឥឡូវនេះ
-      - ខ្ញុំទាល់គំនិត ជួយខ្ញុំគិតគូរផង
-      - ជួយខ្ញុំ អ្នកគ្រូ
-      - ត្រូវការជំនួយ ប្រាប់ខ្ញុំមក
-      - ឱ្យខ្ញុំធ្វើអ្វី រ៉ូប៊ីណា
-      - ជួយខ្ញុំ បង
-      - ឱ្យខ្ញុំធ្វើអ្វី បង
-      - ជួយខ្ញុំ ប្រាប់ខ្ញុំមក
-      - សុំទានកម្លាំងជួយ បង
-      - ខ្ញុំទាល់គំនិត បង
-      - ត្រូវការជំនួយ រ៉ូប៊ីណា
-      - ធ្វើដូចម្តេចផ្តើម អ្នកគ្រូ
-      - ជួយខ្ញុំ រ៉ូប៊ីណា
-      - ត្រូវការជំនួយ
-      - ធ្វើដូចម្តេចផ្តើម បន្តិច
-      - សុំទានកម្លាំងជួយ រ៉ូប៊ីណា
-      - ជួយខ្ញុំផង
-      - សុំទានកម្លាំងជួយ ប្រាប់ខ្ញុំមក
-      - ធ្វើដូចម្តេចផ្តើម តើត្រូវធ្វើអ្វី
-      - ត្រូវការជំនួយ ឥឡូវនេះ
-      - ធ្វើដូចម្តេចផ្តើម ឥឡូវនេះ
-      - ឱ្យខ្ញុំធ្វើអ្វី
-      - ជួយខ្ញុំផង រ៉ូប៊ីណា
-      - ជួយខ្ញុំ ឥឡូវនេះ
-      - ខ្ញុំទាល់គំនិត អ្នកគ្រូ
-      - សុំទានកម្លាំងជួយ ឥឡូវនេះ
-      - ជួយផង ឥឡូវនេះ
-      - ឱ្យខ្ញុំធ្វើអ្វី អ្នកគ្រូ
-      - ជួយខ្ញុំ
-      - ត្រូវការជំនួយ បន្តិច
-      - ត្រូវការជំនួយ អ្នកគ្រូ
-      - ជួយផង
-      - សុំទានកម្លាំងជួយ
-      - ជួយខ្ញុំផង ប្រាប់ខ្ញុំមក
-      - ត្រូវការជំនួយ បង
-      - ឱ្យខ្ញុំធ្វើអ្វី បន្តិច
-      - Help me
-      - I'm stuck here
-      - Help me kindly
-      - Support needed here
-      - I need assistance kindly
-      - Help now
-      - Assistance please
-      - Help kindly
-      - What do I do please
-      - Assistance please someone
-      - Help
-      - Can you guide me here
-      - I need assistance now
-      - Help with this
-      - Help me here
-      - Support needed with this
-      - I need assistance please
-      - I'm stuck please
-      - I'm stuck with this
-      - What do I do kindly
-      - ហែងចេះអីខ្លះ
-      - អត់ទេចង់សួរថាអ្នកអាចធ្វើអីបានខ្លះ
-      - តើអ្នកអាចជួយអីបានខ្លះ
-      - អ្នកអាចធ្វើអីបាន
-      - ឯងធ្វើអីបានខ្លះ
-
-  # ===== MOOD GREAT =====
-  - intent: mood_great
-    examples: |
-      - I'm doing great
-      - I feel good
-      - I'm happy
-      - wonderful
-      - amazing
-      - fantastic
-      - I'm excited
-      - ខ្ញុំសប្បាយចិត្ត
-      - អស្ចារ្យ ព្រោះតែអ្នក
-      - រំភើបណាស់ ព្រោះតែអ្នក
-      - អស្ចារ្យ ក្នុងចិត្ត
-      - រំភើបណាស់
-      - ឡូយមែនទែន ព្រោះតែអ្នក
-      - ស្រឡះចិត្ត ណាស់
-      - អស្ចារ្យ ដល់ហើយ
-      - រំភើបណាស់ ណាស់
-      - រីករាយណាស់ ណាស់
-      - មានអារម្មណ៍ល្អណាស់ សប្បាយដល់កំពូល
-      - ឡូយមែនទែន ក្នុងចិត្ត
-      - ខ្ញុំសប្បាយចិត្ត ដល់ហើយ
-      - មានអារម្មណ៍ល្អណាស់ ក្នុងចិត្ត
-      - អស្ចារ្យ ណាស់
-      - សប្បាយរុករាយ ណាស់
-      - ឡូយមែនទែន ថ្ងៃនេះ
-      - មានអារម្មណ៍ល្អណាស់ ព្រោះតែអ្នក
-      - សប្បាយរុករាយ ដល់ហើយ
-      - សប្បាយរុករាយ មែនទែន
-      - សប្បាយរុករាយ
-      - ខ្ញុំសប្បាយចិត្ត ថ្ងៃនេះ
-      - ស្រឡះចិត្ត
-      - អស្ចារ្យ
-      - រំភើបណាស់ មែនទែន
-      - ស្រឡះចិត្ត មែនទែន
-      - ខ្ញុំសប្បាយចិត្ត ក្នុងចិត្ត
-      - រីករាយណាស់ មែនទែន
-      - រំភើបណាស់ ថ្ងៃនេះ
-      - មានអារម្មណ៍ល្អណាស់
-      - ឡូយមែនទែន ដល់ហើយ
-      - រំភើបណាស់ ដល់ហើយ
-      - ខ្ញុំសប្បាយចិត្ត
-      - រំភើបណាស់ ក្នុងចិត្ត
-      - ខ្ញុំសប្បាយចិត្ត សប្បាយដល់កំពូល
-      - អស្ចារ្យ សប្បាយដល់កំពូល
-      - ស្រឡះចិត្ត ដល់ហើយ
-      - មានអារម្មណ៍ល្អណាស់ ថ្ងៃនេះ
-      - សប្បាយរុករាយ ក្នុងចិត្ត
-      - មានអារម្មណ៍ល្អណាស់ ណាស់
-      - ខ្ញុំសប្បាយចិត្ត ព្រោះតែអ្នក
-      - រីករាយណាស់ ដល់ហើយ
-      - សប្បាយរុករាយ ព្រោះតែអ្នក
-      - អស្ចារ្យ មែនទែន
-      - រីករាយណាស់ សប្បាយដល់កំពូល
-      - មានអារម្មណ៍ល្អណាស់ មែនទែន
-      - រីករាយណាស់
-      - មានអារម្មណ៍ល្អណាស់ ដល់ហើយ
-      - ស្រឡះចិត្ត ក្នុងចិត្ត
-      - សប្បាយរុករាយ ថ្ងៃនេះ
-      - អស្ចារ្យ ថ្ងៃនេះ
-      - Awesome right now
-      - I'm happy so much
-      - Amazing so much
-      - Wonderful woohoo
-      - Amazing right now
-      - Feeling good woohoo
-      - I'm doing great right now
-      - Awesome so much
-      - I'm doing great thanks to you
-      - Awesome very much
-      - Amazing woohoo
-      - Thrilled today
-      - Elated woohoo
-      - Fantastic thanks to you
-      - Elated thanks to you
-      - Feeling good very much
-      - Wonderful
-      - Wonderful today
-      - Wonderful so much
-      - I'm doing great today
-
-  # ===== MOOD UNHAPPY =====
-  - intent: mood_unhappy
-    examples: |
-      - I'm sad
-      - I'm confused
-      - I don't know what to do
-      - I'm lost
-      - I'm stressed
-      - worried about my future
-      - I'm scared
-      - I'm anxious about choosing
-      - ខ្ញុំមិនដឹងធ្វើអ្វី
-      - ពិបាកចិត្ត ពេក
-      - ស្ត្រេសណាស់ មែនទែន
-      - មិនដឹងធ្វើម៉េច អំពីអនាគត
-      - រកនឹកមិនឃើញ ណាស់
-      - អត់មានដំណោះស្រាយ អំពីអនាគត
-      - រកនឹកមិនឃើញ ពេក
-      - ពិបាកចិត្ត ថ្ងៃនេះ
-      - បារម្ភ ណាស់
-      - ពិបាកចិត្ត ឥឡូវ
-      - ខ្ញុំមិនសប្បាយចិត្ត
-      - បារម្ភ ពិបាកណាស់
-      - ភ័យខ្លាច ណាស់
-      - ស្ត្រេសណាស់ ពិបាកណាស់
-      - ខ្ញុំមិនសប្បាយចិត្ត អំពីអនាគត
-      - ខ្ញុំមិនសប្បាយចិត្ត មែនទែន
-      - ពិបាកចិត្ត អំពីអនាគត
-      - អត់មានដំណោះស្រាយ ពេក
-      - ស្ត្រេសណាស់ ឥឡូវ
-      - ភ័យខ្លាច ឥឡូវ
-      - រកនឹកមិនឃើញ ឥឡូវ
-      - ពិបាកចិត្ត ណាស់
-      - ពិបាកចិត្ត មែនទែន
-      - បារម្ភ
-      - មិនដឹងធ្វើម៉េច ពិបាកណាស់
-      - អត់មានដំណោះស្រាយ ថ្ងៃនេះ
-      - ខ្ញុំមិនសប្បាយចិត្ត ឥឡូវ
-      - ស្ត្រេសណាស់ ណាស់
-      - បារម្ភ អំពីអនាគត
-      - រកនឹកមិនឃើញ
-      - ភ័យខ្លាច
-      - ស្ត្រេសណាស់ អំពីអនាគត
-      - មិនដឹងធ្វើម៉េច
-      - ស្ត្រេសណាស់
-      - ភ័យខ្លាច ពិបាកណាស់
-      - បារម្ភ ឥឡូវ
-      - ខ្ញុំមិនសប្បាយចិត្ត ពេក
-      - បារម្ភ មែនទែន
-      - ភ័យខ្លាច ពេក
-      - មិនដឹងធ្វើម៉េច ពេក
-      - រកនឹកមិនឃើញ អំពីអនាគត
-      - អត់មានដំណោះស្រាយ
-      - អត់មានដំណោះស្រាយ មែនទែន
-      - មិនដឹងធ្វើម៉េច ឥឡូវ
-      - រកនឹកមិនឃើញ ថ្ងៃនេះ
-      - អត់មានដំណោះស្រាយ ណាស់
-      - អត់មានដំណោះស្រាយ ឥឡូវ
-      - បារម្ភ ពេក
-      - រកនឹកមិនឃើញ មែនទែន
-      - មិនដឹងធ្វើម៉េច មែនទែន
-      - អត់មានដំណោះស្រាយ ពិបាកណាស់
-      - I feel terrible
-      - Worried today
-      - Stressed out right now
-      - Depressed about the future
-      - Depressed so much
-      - Worried so much
-      - Lost about the future
-      - Unhappy so much
-      - I'm sad so much
-      - Confused I need help with it
-      - Depressed
-      - Worried about the future
-      - Lost
-      - I'm sad about the future
-      - Lost I need help with it
-      - Unhappy today
-      - Confused
-      - Stressed out I need help with it
-      - Confused about the future
-      - I'm sad today
-
-  # ===== STOP SURVEY =====
-  - intent: stop_survey
-    examples: |
-      - stop
-      - stop the survey
-      - cancel
-      - quit
-      - I want to stop
-      - end the survey
-      - that's enough
-      - no more questions
-      - ឈប់
-      - បញ្ឈប់
-      - មិនបន្តទេ លែងចង់ធ្វើ
-      - មិនបន្តទេ ការស្ទង់មតិ
-      - បញ្ឈប់ ឈប់លេងហើយ
-      - អត់ចង់ឆ្លើយទៀត ឥឡូវនេះ
-      - អត់ចង់ឆ្លើយទៀត ត្រឹមនេះ
-      - អត់ចង់ឆ្លើយទៀត លែងចង់ធ្វើ
-      - ឈប់ សិន
-      - អត់ចង់ឆ្លើយទៀត សិន
-      - cancel ការស្ទង់មតិ
-      - cancel ឈប់លេងហើយ
-      - បោះបង់ ឈប់លេងហើយ
-      - ល្មមហើយ
-      - cancel សិន
-      - ឈប់ ឥឡូវនេះ
-      - ឈប់ ការស្ទង់មតិ
-      - មិនបន្តទេ ឥឡូវនេះ
-      - ឈប់ ឈប់លេងហើយ
-      - បោះបង់ ទុកសិន
-      - បោះបង់ ឥឡូវនេះ
-      - បោះបង់ សិន
-      - ខ្ញុំស្ត្រេសចង់ឈប់ សិន
-      - cancel ព្រោះហត់
-      - ល្មមហើយ ត្រឹមនេះ
-      - ឈប់ ទុកសិន
-      - អត់ចង់ឆ្លើយទៀត ការស្ទង់មតិ
-      - បោះបង់ ការស្ទង់មតិ
-      - មិនបន្តទេ សិន
-      - ខ្ញុំស្ត្រេសចង់ឈប់ ឈប់លេងហើយ
-      - បញ្ឈប់ សិន
-      - cancel
-      - បោះបង់ ត្រឹមនេះ
-      - ឈប់
-      - បោះបង់ ព្រោះហត់
-      - បញ្ឈប់ ទុកសិន
-      - ល្មមហើយ ទុកសិន
-      - បញ្ឈប់ ត្រឹមនេះ
-      - បញ្ឈប់ ឥឡូវនេះ
-      - ខ្ញុំស្ត្រេសចង់ឈប់ ទុកសិន
-      - អត់ចង់ឆ្លើយទៀត ទុកសិន
-      - ល្មមហើយ សិន
-      - បញ្ឈប់ លែងចង់ធ្វើ
-      - អត់ចង់ឆ្លើយទៀត ព្រោះហត់
-      - ខ្ញុំស្ត្រេសចង់ឈប់
-      - ឈប់ លែងចង់ធ្វើ
-      - ឈប់ ព្រោះហត់
-      - ល្មមហើយ ព្រោះហត់
-      - មិនបន្តទេ ឈប់លេងហើយ
-      - បញ្ឈប់ ការស្ទង់មតិ
-      - បញ្ឈប់ ព្រោះហត់
-      - មិនបន្តទេ ត្រឹមនេះ
-      - Enough I'm tired of this
-      - Stop
-      - End survey
-      - Terminate please
-      - I want to stop now
-      - Enough the assessment
-      - Cancel please
-      - Quit I'm tired of this
-      - I want to stop I'm tired of this
-      - Enough please
-      - Quit please
-      - Quit
-      - Halt please
-      - I want to stop
-      - End survey now
-      - Terminate for now
-      - Stop the assessment
-      - Cancel now
-      - I want to stop for now
-      - Terminate I'm tired of this
-
-  # ===== SHOW RESULTS =====
-  - intent: show_results
-    examples: |
-      - show results
-      - what's my result
-      - give me my recommendation
-      - show my major
-      - results
-      - what do you think
-      - my prediction
-      - show prediction
-      - បង្ហាញលទ្ធផល
-      - ផ្តល់ចម្លើយ ឱ្យខ្ញុំមើល
-      - ផ្តល់ចម្លើយ ភ្លាមៗ
-      - លទ្ធផល ភ្លាមៗ
-      - ប្រាប់លទ្ធផលមក ដែលល្អបំផុត
-      - តើខ្ញុំជាប់ខាងអី ឥឡូវនេះ
-      - តើខ្ញុំជាប់ខាងអី មក
-      - បង្ហាញលទ្ធផល ឱ្យខ្ញុំមើល
-      - បង្ហាញលទ្ធផល ដែលល្អបំផុត
-      - ចង់ឃើញលទ្ធផល ភ្លាមៗ
-      - បង្ហាញលទ្ធផល នៅពេលនេះ
-      - ប្រាប់លទ្ធផលមក ឥឡូវនេះ
-      - លទ្ធផល
-      - ផ្តល់ចម្លើយ នៅពេលនេះ
-      - បង្ហាញលទ្ធផល ឥឡូវនេះ
-      - ប្រាប់លទ្ធផលមក
-      - ចង់ឃើញលទ្ធផល
-      - បង្ហាញជំនាញខ្ញុំ ឱ្យខ្ញុំមើល
-      - លទ្ធផល នៅពេលនេះ
-      - ប្រាប់លទ្ធផលមក នៅពេលនេះ
-      - បង្ហាញជំនាញខ្ញុំ របស់អ្នក
-      - ផ្តល់ចម្លើយ
-      - លទ្ធផល ឱ្យខ្ញុំមើល
-      - បង្ហាញលទ្ធផល មក
-      - ប្រាប់លទ្ធផលមក ឱ្យខ្ញុំមើល
-      - លទ្ធផល ដែលល្អបំផុត
-      - បង្ហាញជំនាញខ្ញុំ ដែលល្អបំផុត
-      - តើខ្ញុំជាប់ខាងអី ឱ្យខ្ញុំមើល
-      - បង្ហាញជំនាញខ្ញុំ ភ្លាមៗ
-      - បង្ហាញជំនាញខ្ញុំ មក
-      - បង្ហាញជំនាញខ្ញុំ នៅពេលនេះ
-      - លទ្ធផល របស់អ្នក
-      - តើខ្ញុំជាប់ខាងអី
-      - តើខ្ញុំជាប់ខាងអី ដែលល្អបំផុត
-      - ចង់ឃើញលទ្ធផល មក
-      - តើខ្ញុំជាប់ខាងអី ភ្លាមៗ
-      - ប្រាប់លទ្ធផលមក ភ្លាមៗ
-      - បង្ហាញជំនាញខ្ញុំ ឥឡូវនេះ
-      - តើខ្ញុំជាប់ខាងអី នៅពេលនេះ
-      - ចង់ឃើញលទ្ធផល ឱ្យខ្ញុំមើល
-      - បង្ហាញជំនាញខ្ញុំ
-      - ផ្តល់ចម្លើយ មក
-      - ប្រាប់លទ្ធផលមក របស់អ្នក
-      - ផ្តល់ចម្លើយ របស់អ្នក
-      - ចង់ឃើញលទ្ធផល នៅពេលនេះ
-      - លទ្ធផល មក
-      - ចង់ឃើញលទ្ធផល ឥឡូវនេះ
-      - ផ្តល់ចម្លើយ ដែលល្អបំផុត
-      - លទ្ធផល ឥឡូវនេះ
-      - ចង់ឃើញលទ្ធផល របស់អ្នក
-      - បង្ហាញលទ្ធផល
-      - Show final score
-      - Show results now
-      - Reveal my major now
-      - My prediction please
-      - What's my result now
-      - Reveal my major
-      - Show final score for my assessment
-      - Show final score to me
-      - What's my result let's see it
-      - Show results to me
-      - Reveal my major to me
-      - Reveal my major please
-      - Give me the outcome now
-      - Show final score now
-      - I want my recommendation to me
-      - Give me the outcome
-      - Show final score please
-      - What's my result to me
-      - I want my recommendation now
-      - What's my result please
-
-  # ===== OUT OF SCOPE =====
-  - intent: out_of_scope
-    examples: |
-      - what's the weather
-      - tell me a joke
-      - who are you
-      - what are you
-      - how old are you
-      - where are you from
-      - what's your name
-      - do you like pizza
-      - sing me a song
-      - tell me a story
-      - what's 2 plus 2
-      - who made you
-      - are you a robot
-      - can you dance
-      - នរណាបង្កើតពិភពលោក ចង់ដឹងណា
-      - តើអ្នកអាយុប៉ុន្មាន បងរ៉ូបូត
-      - ច្រៀងមួយបទមក ឆ្លើយលេងៗ
-      - ថ្ងៃមេឃស្រឡះ បងរ៉ូបូត
-      - លេងហ្គេមទេ បងរ៉ូបូត
-      - តើអ្នកចេះរាំទេ
-      - ថ្ងៃមេឃស្រឡះ ឆ្លើយលេងៗ
-      - តើអ្នកអាយុប៉ុន្មាន ?
-      - តើអ្នកចេះរាំទេ ?
-      - តើអ្នកអាយុប៉ុន្មាន សំណួរក្រៅ
-      - តើអ្នកអាយុប៉ុន្មាន ប្រាប់ខ្ញុំចង់ដឹង
-      - តើអ្នកអាយុប៉ុន្មាន ឆ្លើយលេងៗ
-      - លេងហ្គេមទេ
-      - នរណាបង្កើតពិភពលោក លេងៗ
-      - ចេះធ្វើម្ហូបទេ ឆ្លើយលេងៗ
-      - លេងហ្គេមទេ ប្រាប់ខ្ញុំចង់ដឹង
-      - នរណាបង្កើតពិភពលោក សំណួរក្រៅ
-      - លេងហ្គេមទេ ?
-      - ថ្ងៃមេឃស្រឡះ សំណួរក្រៅ
-      - ចេះធ្វើម្ហូបទេ ?
-      - តើអ្នកចេះរាំទេ សំណួរក្រៅ
-      - ចេះធ្វើម្ហូបទេ ចង់ដឹងណា
-      - ថ្ងៃមេឃស្រឡះ ប្រាប់ខ្ញុំចង់ដឹង
-      - ច្រៀងមួយបទមក សំណួរក្រៅ
-      - តើអ្នកចេះរាំទេ ប្រាប់ខ្ញុំចង់ដឹង
-      - ចេះធ្វើម្ហូបទេ ប្រាប់ខ្ញុំចង់ដឹង
-      - ច្រៀងមួយបទមក ចង់ដឹងណា
-      - នរណាបង្កើតពិភពលោក បងរ៉ូបូត
-      - លេងហ្គេមទេ សំណួរក្រៅ
-      - នរណាបង្កើតពិភពលោក ?
-      - អ្នកចូលចិត្តភ្លៀងទេ ប្រាប់ខ្ញុំចង់ដឹង
-      - នរណាបង្កើតពិភពលោក ឆ្លើយលេងៗ
-      - ចេះធ្វើម្ហូបទេ
-      - ច្រៀងមួយបទមក ប្រាប់ខ្ញុំចង់ដឹង
-      - តើអ្នកចេះរាំទេ ឆ្លើយលេងៗ
-      - លេងហ្គេមទេ ឆ្លើយលេងៗ
-      - អ្នកចូលចិត្តភ្លៀងទេ សំណួរក្រៅ
-      - តើអ្នកចេះរាំទេ លេងៗ
-      - លេងហ្គេមទេ ចង់ដឹងណា
-      - តើអ្នកចេះរាំទេ បងរ៉ូបូត
-      - នរណាបង្កើតពិភពលោក
-      - ច្រៀងមួយបទមក
-      - ចេះធ្វើម្ហូបទេ សំណួរក្រៅ
-      - អ្នកចូលចិត្តភ្លៀងទេ ចង់ដឹងណា
-      - អ្នកចូលចិត្តភ្លៀងទេ លេងៗ
-      - លេងហ្គេមទេ លេងៗ
-      - ចេះធ្វើម្ហូបទេ បងរ៉ូបូត
-      - ច្រៀងមួយបទមក បងរ៉ូបូត
-      - ថ្ងៃមេឃស្រឡះ លេងៗ
-      - អ្នកចូលចិត្តភ្លៀងទេ ឆ្លើយលេងៗ
-      - What's the weather my friend
-      - Play music right now
-      - How old are you
-      - Are you a robot in the rain?
-      - Tell me a joke right now
-      - What's the weather today?
-      - Play music in the rain?
-      - Tell me a joke in the rain?
-      - Can you dance
-      - How old are you my friend
-      - Can you dance for me
-      - Sing a song please
-      - Tell me a joke my friend
-      - Sing a song today?
-      - Sing a song in the rain?
-      - Can you dance please
-      - Play music my friend
-      - Do you like pizza my friend
-      - Do you like pizza right now
-      - Who made the world right now
-
-  # ===== ANGKOR UNIVERSITY FAQS =====
-  - intent: faq/general
-    examples: |
-      - តើសាកលវិទ្យាល័យអង្គរជាអ្វី?
-      - ទីតាំងនៅឯណា?
-      - បង្កើតនៅពេលណា?
-      - អ្នកណាជាស្ថាបនិក?
-      - general info about angkor university
-      - ព័ត៌មានទូទៅពីអង្គរ ផ្តល់ពត៌មានបានទេ
-      - តើសាកលវិទ្យាល័យអង្គរជាអ្វី? សុំពន្យល់
-      - តើសាលាអង្គរនៅឯណា មាននរណាដឹង
-      - តើសាកលវិទ្យាល័យអង្គរជាអ្វី?
-      - ព័ត៌មានទូទៅពីអង្គរ មាននរណាដឹង
-      - តើសាលាអង្គរនៅឯណា សុំពន្យល់
-      - ព័ត៌មានទូទៅពីអង្គរ
-      - យល់ដឹងពីសាកលវិទ្យាល័យ អាចនិយាយបានទេ
-      - ចង់ដឹងពីសាលាអង្គរ
-      - ចង់ដឹងពីសាលាអង្គរ សុំពន្យល់
-      - តើសាកលវិទ្យាល័យអង្គរជាអ្វី? អាចនិយាយបានទេ
-      - យល់ដឹងពីសាកលវិទ្យាល័យ
-      - ព័ត៌មានទូទៅពីអង្គរ ជួយប្រាប់ផង
-      - យល់ដឹងពីសាកលវិទ្យាល័យ សុំពន្យល់
-      - ចង់ដឹងពីសាលាអង្គរ ជួយឆ្លើយសំណួរផ្ដល់ពត៌មាន
-      - តើសាលាអង្គរនៅឯណា ជួយឆ្លើយសំណួរផ្ដល់ពត៌មាន
-      - ចង់ដឹងពីសាលាអង្គរ អាចនិយាយបានទេ
-      - តើសាលាអង្គរនៅឯណា ផ្តល់ពត៌មានបានទេ
-      - យល់ដឹងពីសាកលវិទ្យាល័យ ផ្តល់ពត៌មានបានទេ
-      - ព័ត៌មានទូទៅពីអង្គរ ជួយឆ្លើយសំណួរផ្ដល់ពត៌មាន
-      - តើសាលាអង្គរនៅឯណា អាចនិយាយបានទេ
-      - ចង់ដឹងពីសាលាអង្គរ ជួយប្រាប់ផង
-      - តើសាកលវិទ្យាល័យអង្គរជាអ្វី? ជួយឆ្លើយសំណួរផ្ដល់ពត៌មាន
-      - តើសាលាអង្គរនៅឯណា
-      - តើសាកលវិទ្យាល័យអង្គរជាអ្វី? ផ្តល់ពត៌មានបានទេ
-      - ចង់ដឹងពីសាលាអង្គរ មាននរណាដឹង
-      - ព័ត៌មានទូទៅពីអង្គរ អាចនិយាយបានទេ
-      - តើសាកលវិទ្យាល័យអង្គរជាអ្វី? មាននរណាដឹង
-      - យល់ដឹងពីសាកលវិទ្យាល័យ ជួយឆ្លើយសំណួរផ្ដល់ពត៌មាន
-      - តើសាលាអង្គរនៅឯណា ជួយប្រាប់ផង
-      - ព័ត៌មានទូទៅពីអង្គរ សុំពន្យល់
-      - យល់ដឹងពីសាកលវិទ្យាល័យ ជួយប្រាប់ផង
-      - តើសាកលវិទ្យាល័យអង្គរជាអ្វី? ជួយប្រាប់ផង
-      - ចង់ដឹងពីសាលាអង្គរ ផ្តល់ពត៌មានបានទេ
-      - យល់ដឹងពីសាកលវិទ្យាល័យ មាននរណាដឹង
-      - Where is Angkor U please
-      - Angkor university details please
-      - General info about Angkor I want to know
-      - What is Angkor University?
-      - Tell me about Angkor Uni please
-      - Angkor university details can you tell me
-      - Where is Angkor U I want to know
-      - Tell me about Angkor Uni explain more
-      - What is Angkor University? can you tell me
-      - Angkor university details
-      - General info about Angkor please
-      - Where is Angkor U just curious
-      - What is Angkor University? just curious
-      - What is Angkor University? explain more
-      - Where is Angkor U
-      - What is Angkor University? please
-      - Tell me about Angkor Uni I want to know
-      - Where is Angkor U can you tell me
-      - General info about Angkor can you tell me
-      - Tell me about Angkor Uni
-      
-  - intent: faq/faculties
-    examples: |
-      - មានមហាវិទ្យាល័យអ្វីខ្លះ?
-      - តើមានជំនាញអ្វីខ្លះ?
-      - ខ្ញុំអាចរៀនអ្វីខ្លះ?
-      - faculties
-      - majors available
-      - what can I study
-      - ផ្នែកណាខ្លះ? អាចរៀនអីបាន
-      - មានមហាវិទ្យាល័យអ្វីខ្លះ? នៅអង្គរ
-      - តើមានជំនាញអីរៀន? ដែរយុវជនចូលចិត្ត
-      - ឯកទេសអីគេខ្លះនៅសាលា? សុំរៀបរាប់
-      - មានមហាវិទ្យាល័យអ្វីខ្លះ? ដែរយុវជនចូលចិត្ត
-      - រៀនអីបានខ្លះ? អាចរៀនអីបាន
-      - ផ្នែកណាខ្លះ?
-      - មានមហាវិទ្យាល័យអ្វីខ្លះ? អាចរៀនអីបាន
-      - ឯកទេសអីគេខ្លះនៅសាលា? អាចរៀនអីបាន
-      - រៀនអីបានខ្លះ? ដែរយុវជនចូលចិត្ត
-      - ផ្នែកណាខ្លះ? ដែរយុវជនចូលចិត្ត
-      - រៀនអីបានខ្លះ? នៅអង្គរ
-      - តើមានជំនាញអីរៀន? នៅអង្គរ
-      - ឯកទេសអីគេខ្លះនៅសាលា? ដែរយុវជនចូលចិត្ត
-      - តើមានជំនាញអីរៀន? អាចរៀនអីបាន
-      - ឯកទេសអីគេខ្លះនៅសាលា?
-      - ផ្នែកណាខ្លះ? សុំរៀបរាប់
-      - តើមានជំនាញអីរៀន?
-      - រៀនអីបានខ្លះ?
-      - ឯកទេសអីគេខ្លះនៅសាលា? ប្រាប់មក
-      - ឯកទេសអីគេខ្លះនៅសាលា? នៅអង្គរ
-      - មានមហាវិទ្យាល័យអ្វីខ្លះ? សុំរៀបរាប់
-      - ផ្នែកណាខ្លះ? នៅអង្គរ
-      - ផ្នែកណាខ្លះ? ប្រាប់មក
-      - មានមហាវិទ្យាល័យអ្វីខ្លះ? ប្រាប់មក
-      - តើមានជំនាញអីរៀន? ប្រាប់មក
-      - រៀនអីបានខ្លះ? ប្រាប់មក
-      - មានមហាវិទ្យាល័យអ្វីខ្លះ?
-      - តើមានជំនាញអីរៀន? សុំរៀបរាប់
-      - រៀនអីបានខ្លះ? សុំរៀបរាប់
-      - Degree programs offered
-      - Available majors explain briefly
-      - Degree programs offered explain briefly
-      - Available majors at Angkor
-      - Available majors can you list them
-      - What faculties are there? can you list them
-      - What faculties are there? can you show me
-      - Degree programs offered can you show me
-      - Available majors please
-      - List of majors at Angkor
-      - Degree programs offered please
-      - What faculties are there? explain briefly
-      - List of majors
-      - What faculties are there?
-      - What can I study can you show me
-      - List of majors can you list them
-      - List of majors please
-      - What can I study please
-      - What can I study explain briefly
-      - List of majors can you show me
-      
-  - intent: faq/scholarships
-    examples: |
-      - តើមានអាហារូបករណ៍ទេ?
-      - សុំអាហារូបករណ៍បានទេ?
-      - កម្រិតអាហារូបករណ៍
-      - scholarships
-      - how to get scholarship
-      - មានការបញ្ចុះតម្លៃទេ?
-      - សុំអាហារូបករណ៍
-      - សុំអាហារូបករណ៍ សុំលេខលុយ
-      - តើមានអាហារូបករណ៍ទេ? ប្រាប់ផង
-      - មានការបញ្ចុះតម្លៃទេ? មានប្រលងទេ
-      - សុំអាហារូបករណ៍ នៅអង្គរ
-      - តើមានអាហារូបករណ៍ទេ? សុំដឹង
-      - ចុះអាហារូបករណ៍វិញ? នៅអង្គរ
-      - ចុះអាហារូបករណ៍វិញ? សុំលេខលុយ
-      - មានការបញ្ចុះតម្លៃទេ? សុំលេខលុយ
-      - ប្រលងយកអាហារូបករណ៍ មានប្រលងទេ
-      - ប្រលងយកអាហារូបករណ៍
-      - ប្រលងយកអាហារូបករណ៍ ប្រាប់ផង
-      - សុំអាហារូបករណ៍ ឆ្នាំនេះ
-      - តើមានអាហារូបករណ៍ទេ? សុំលេខលុយ
-      - ប្រលងយកអាហារូបករណ៍ ឆ្នាំនេះ
-      - តើមានអាហារូបករណ៍ទេ?
-      - មានការបញ្ចុះតម្លៃទេ? ឆ្នាំនេះ
-      - មានការបញ្ចុះតម្លៃទេ? ប្រាប់ផង
-      - ចុះអាហារូបករណ៍វិញ? សុំដឹង
-      - សុំអាហារូបករណ៍ មានប្រលងទេ
-      - មានការបញ្ចុះតម្លៃទេ? សុំដឹង
-      - ប្រលងយកអាហារូបករណ៍ សុំលេខលុយ
-      - ប្រលងយកអាហារូបករណ៍ នៅអង្គរ
-      - តើមានអាហារូបករណ៍ទេ? មានប្រលងទេ
-      - ចុះអាហារូបករណ៍វិញ?
-      - ចុះអាហារូបករណ៍វិញ? មានប្រលងទេ
-      - សុំអាហារូបករណ៍ ប្រាប់ផង
-      - សុំអាហារូបករណ៍ សុំដឹង
-      - ចុះអាហារូបករណ៍វិញ? ឆ្នាំនេះ
-      - តើមានអាហារូបករណ៍ទេ? នៅអង្គរ
-      - ចុះអាហារូបករណ៍វិញ? ប្រាប់ផង
-      - តើមានអាហារូបករណ៍ទេ? ឆ្នាំនេះ
-      - មានការបញ្ចុះតម្លៃទេ? នៅអង្គរ
-      - ប្រលងយកអាហារូបករណ៍ សុំដឹង
-      - Discounts available at this university
-      - Tuition waiver at this university
-      - Free study programs tell me about it
-      - Free study programs how?
-      - Free study programs at this university
-      - Discounts available how?
-      - Are there scholarships? tell me about it
-      - Tuition waiver is it possible?
-      - Getting a scholarship
-      - Getting a scholarship tell me about it
-      - Are there scholarships? is it possible?
-      - Free study programs is it possible?
-      - Free study programs explain please
-      - Are there scholarships? at this university
-      - Getting a scholarship explain please
-      - Discounts available explain please
-      - Tuition waiver tell me about it
-      - Are there scholarships?
-      - Tuition waiver how?
-      - Discounts available is it possible?
-      
-  - intent: faq/clubs
-    examples: |
-      - តើមានក្លឹបនិស្សិតអ្វីខ្លះ?
-      - student clubs
-      - activities
-      - internship
-      - សកម្មភាពសាលា
-      - ចុះក្លឹបកីឡា? មានអីខ្លះសប្បាយៗ
-      - មានសកម្មភាពក្រៅម៉ោងទេ? ជាអ្វីខ្លះដឹង
-      - សកម្មភាពនិស្សិត ជាអ្វីខ្លះដឹង
-      - មានសកម្មភាពក្រៅម៉ោងទេ?
-      - សកម្មភាពនិស្សិត ប្រាប់បន្តិចមក
-      - មានសកម្មភាពក្រៅម៉ោងទេ? ជួយផ្តល់ព័ត៌មាន
-      - កម្មវិធីស្ម័គ្រចិត្ត ជាអ្វីខ្លះដឹង
-      - ចុះក្លឹបកីឡា? នៅទីធ្លាសាលា
-      - កម្មវិធីស្ម័គ្រចិត្ត
-      - មានសកម្មភាពក្រៅម៉ោងទេ? មានអីខ្លះសប្បាយៗ
-      - តើមានក្លឹបអ្វីខ្លះ? ជាអ្វីខ្លះដឹង
-      - តើមានក្លឹបអ្វីខ្លះ? មានអីខ្លះសប្បាយៗ
-      - កម្មវិធីស្ម័គ្រចិត្ត មានអីខ្លះសប្បាយៗ
-      - កម្មវិធីស្ម័គ្រចិត្ត ប្រាប់បន្តិចមក
-      - សកម្មភាពនិស្សិត
-      - មានសកម្មភាពក្រៅម៉ោងទេ? ប្រាប់បន្តិចមក
-      - ចុះក្លឹបកីឡា?
-      - ចុះក្លឹបកីឡា? ប្រាប់បន្តិចមក
-      - កម្មវិធីស្ម័គ្រចិត្ត ជួយផ្តល់ព័ត៌មាន
-      - កម្មវិធីស្ម័គ្រចិត្ត នៅទីធ្លាសាលា
-      - តើមានក្លឹបអ្វីខ្លះ? ជួយផ្តល់ព័ត៌មាន
-      - ចុះក្លឹបកីឡា? ជាអ្វីខ្លះដឹង
-      - តើមានក្លឹបអ្វីខ្លះ?
-      - សកម្មភាពនិស្សិត នៅទីធ្លាសាលា
-      - តើមានក្លឹបអ្វីខ្លះ? ប្រាប់បន្តិចមក
-      - មានសកម្មភាពក្រៅម៉ោងទេ? នៅទីធ្លាសាលា
-      - ចុះក្លឹបកីឡា? ជួយផ្តល់ព័ត៌មាន
-      - សកម្មភាពនិស្សិត មានអីខ្លះសប្បាយៗ
-      - តើមានក្លឹបអ្វីខ្លះ? នៅទីធ្លាសាលា
-      - សកម្មភាពនិស្សិត ជួយផ្តល់ព័ត៌មាន
-      - Student clubs at your school
-      - Extracurriculars how to join
-      - Any sports clubs? available
-      - Any sports clubs? at your school
-      - Student clubs are there any?
-      - Activities on campus available
-      - Volunteer opportunities available
-      - Student clubs available
-      - Volunteer opportunities how to join
-      - Activities on campus show me
-      - Volunteer opportunities show me
-      - Volunteer opportunities
-      - Volunteer opportunities are there any?
-      - Activities on campus how to join
-      - Activities on campus
-      - Extracurriculars at your school
-      - Any sports clubs?
-      - Student clubs show me
-      - Extracurriculars are there any?
-      - Activities on campus at your school
-      
-  - intent: faq/contact
-    examples: |
-      - ទំនាក់ទំនងតាមណា?
-      - លេខទូរស័ព្ទប៉ុន្មាន?
-      - លេខសាលា
-      - អ៊ីមែល
-      - contact info
-      - email
-      - phone number
-      - អ៊ីមែលសាលា ប្រាប់លេខមក
-      - អ៊ីមែលសាលា មានទេ
-      - អ៊ីមែលសាលា
-      - ទាក់ទងតាមណា? ឲ្យខ្ញុំផង
-      - លេខទូរស័ព្ទសាលា? ឲ្យខ្ញុំផង
-      - ទំនាក់ទំនងតាមសាលា? ប្រាប់លេខមក
-      - លេខទូរស័ព្ទសាលា? មានទេ
-      - សុំលេខសាលា លេខប៉ុន្មានដែរបង
-      - សុំលេខសាលា មានទេ
-      - អ៊ីមែលសាលា ឲ្យខ្ញុំផង
-      - ទំនាក់ទំនងតាមសាលា? ឲ្យខ្ញុំផង
-      - សុំលេខសាលា ប្រាប់លេខមក
-      - ទាក់ទងតាមណា? មានទេ
-      - សុំលេខសាលា ផ្ដល់ផង
-      - ទំនាក់ទំនងតាមសាលា? ផ្ដល់ផង
-      - លេខទូរស័ព្ទសាលា? ប្រាប់លេខមក
-      - ទាក់ទងតាមណា?
-      - ទំនាក់ទំនងតាមសាលា? លេខប៉ុន្មានដែរបង
-      - ទាក់ទងតាមណា? លេខប៉ុន្មានដែរបង
-      - ទំនាក់ទំនងតាមសាលា?
-      - ទាក់ទងតាមណា? ប្រាប់លេខមក
-      - អ៊ីមែលសាលា សុំផេកហ្វេសប៊ុក
-      - ទំនាក់ទំនងតាមសាលា? មានទេ
-      - ទាក់ទងតាមណា? សុំផេកហ្វេសប៊ុក
-      - សុំលេខសាលា ឲ្យខ្ញុំផង
-      - សុំលេខសាលា
-      - ទំនាក់ទំនងតាមសាលា? សុំផេកហ្វេសប៊ុក
-      - លេខទូរស័ព្ទសាលា? ផ្ដល់ផង
-      - លេខទូរស័ព្ទសាលា? លេខប៉ុន្មានដែរបង
-      - សុំលេខសាលា សុំផេកហ្វេសប៊ុក
-      - អ៊ីមែលសាលា លេខប៉ុន្មានដែរបង
-      - លេខទូរស័ព្ទសាលា?
-      - ទាក់ទងតាមណា? ផ្ដល់ផង
-      - លេខទូរស័ព្ទសាលា? សុំផេកហ្វេសប៊ុក
-      - អ៊ីមែលសាលា ផ្ដល់ផង
-      - Get in touch with how to reach out
-      - Contact info can you provide?
-      - Email address please
-      - Phone number can you provide?
-      - Email address
-      - Phone number
-      - Email address the university
-      - Contact info help me call
-      - Phone number how to reach out
-      - How to contact can you provide?
-      - Phone number please
-      - Email address can you provide?
-      - Email address help me call
-      - Get in touch with help me call
-      - Contact info please
-      - Get in touch with the university
-      - Get in touch with please
-      - Phone number help me call
-      - Contact info the university
-      - How to contact how to reach out
-
-  - intent: faq/history
-    examples: |
-      - តើសាលាអង្គរបង្កើតនៅឆ្នាំណា?
-      - នរណាជាអ្នកបង្កើតសាលាអង្គរ?
-      - history of angkor university
-      - ស្ថាបនិកសាលាជាអ្នកណា?
-      - established date
-      - ប្រវត្តិដើមសាលា
-      - ប្រវត្តិសាលា? នៅសៀមរាប
-      - បង្កើតឆ្នាំណា? នៅសៀមរាប
-      - បង្កើតឆ្នាំណា? នរណាជាម្ចាស់
-      - ប្រវត្តិសាលា? ឆ្នាំមុន
-      - នរណាបង្កើតសាលាអង្គរ? នៅសៀមរាប
-      - ស្ថាបនិកសាលា ប្រាប់ខ្ញុំមក
-      - ប្រវត្តិសាលា?
-      - ប្រវត្តិសាលា? នរណាជាម្ចាស់
-      - ប្រវត្តិដើមសាលា នរណាជាម្ចាស់
-      - ស្ថាបនិកសាលា នៅសៀមរាប
-      - ប្រវត្តិដើមសាលា ឆ្នាំមុន
-      - ប្រវត្តិសាលា? មានរឿងអីខ្លះ
-      - ប្រវត្តិសាលា? ដឹងទេ?
-      - នរណាបង្កើតសាលាអង្គរ? មានរឿងអីខ្លះ
-      - បង្កើតឆ្នាំណា?
-      - ស្ថាបនិកសាលា ដឹងទេ?
-      - ប្រវត្តិសាលា? ប្រាប់ខ្ញុំមក
-      - បង្កើតឆ្នាំណា? ឆ្នាំមុន
-      - បង្កើតឆ្នាំណា? ដឹងទេ?
-      - នរណាបង្កើតសាលាអង្គរ? ប្រាប់ខ្ញុំមក
-      - បង្កើតឆ្នាំណា? មានរឿងអីខ្លះ
-      - ស្ថាបនិកសាលា មានរឿងអីខ្លះ
-      - ស្ថាបនិកសាលា ឆ្នាំមុន
-      - នរណាបង្កើតសាលាអង្គរ? ដឹងទេ?
-      - នរណាបង្កើតសាលាអង្គរ?
-      - ប្រវត្តិដើមសាលា ដឹងទេ?
-      - ស្ថាបនិកសាលា
-      - នរណាបង្កើតសាលាអង្គរ? នរណាជាម្ចាស់
-      - នរណាបង្កើតសាលាអង្គរ? ឆ្នាំមុន
-      - ប្រវត្តិដើមសាលា នៅសៀមរាប
-      - ប្រវត្តិដើមសាលា ប្រាប់ខ្ញុំមក
-      - បង្កើតឆ្នាំណា? ប្រាប់ខ្ញុំមក
-      - ស្ថាបនិកសាលា នរណាជាម្ចាស់
-      - ប្រវត្តិដើមសាលា មានរឿងអីខ្លះ
-      - When was it established I'd like to know
-      - Background of Angkor history please
-      - Founder info can you explain
-      - Founder info tell me
-      - History of university history please
-      - Who founded it tell me
-      - Who founded it history please
-      - Founder info I'd like to know
-      - Background of Angkor tell me
-      - History of university
-      - When was it established can you explain
-      - When was it established tell me
-      - Who founded it I'd like to know
-      - Background of Angkor
-      - Background of Angkor can you explain
-      - Who founded it can you explain
-      - History of university I'd like to know
-      - Founder info
-      - Who founded it please
-      - When was it established please
-
-  - intent: faq/degrees
-    examples: |
-      - តើសាលាមានបណ្តុះបណ្តាលកម្រិតណាខ្លះ?
-      - មានរៀនអនុបណ្ឌិតទេ?
-      - degrees offered
-      - មានថ្នាក់បរិញ្ញាបត្ររងទេ?
-      - what degree can I get?
-      - បណ្តុះបណ្តាលកម្រិតណា? បញ្ជាក់ផង
-      - បណ្តុះបណ្តាលកម្រិតណា? នៅហ្នឹង
-      - ថ្នាក់អនុបណ្ឌិតមានទេ? បញ្ជាក់ផង
-      - បណ្តុះបណ្តាលកម្រិតណា? មានឌីគ្រីទេ
-      - បណ្តុះបណ្តាលកម្រិតណា? ប្រាប់ខ្ញុំមើល
-      - កម្រិតសិក្សាមានអ្វីខ្លះ? មានឌីគ្រីទេ
-      - មាន doctorate អត់? ប្រាប់ខ្ញុំមើល
-      - មានរៀនថ្នាក់បរិញ្ញាបត្ររងទេ? នៅហ្នឹង
-      - មានរៀនថ្នាក់បរិញ្ញាបត្ររងទេ? ប្រាប់ខ្ញុំមើល
-      - កម្រិតសិក្សាមានអ្វីខ្លះ? ថ្នាក់អនុមានអត់
-      - មាន doctorate អត់? បញ្ជាក់ផង
-      - បណ្តុះបណ្តាលកម្រិតណា? សុំដឹង
-      - មាន doctorate អត់? មានឌីគ្រីទេ
-      - ថ្នាក់អនុបណ្ឌិតមានទេ? នៅហ្នឹង
-      - កម្រិតសិក្សាមានអ្វីខ្លះ? ប្រាប់ខ្ញុំមើល
-      - មាន doctorate អត់? នៅហ្នឹង
-      - មាន doctorate អត់?
-      - មានរៀនថ្នាក់បរិញ្ញាបត្ររងទេ? ថ្នាក់អនុមានអត់
-      - មានរៀនថ្នាក់បរិញ្ញាបត្ររងទេ? មានឌីគ្រីទេ
-      - កម្រិតសិក្សាមានអ្វីខ្លះ?
-      - ថ្នាក់អនុបណ្ឌិតមានទេ? សុំដឹង
-      - មានរៀនថ្នាក់បរិញ្ញាបត្ររងទេ? បញ្ជាក់ផង
-      - បណ្តុះបណ្តាលកម្រិតណា? ថ្នាក់អនុមានអត់
-      - មាន doctorate អត់? ថ្នាក់អនុមានអត់
-      - ថ្នាក់អនុបណ្ឌិតមានទេ? ប្រាប់ខ្ញុំមើល
-      - ថ្នាក់អនុបណ្ឌិតមានទេ? មានឌីគ្រីទេ
-      - កម្រិតសិក្សាមានអ្វីខ្លះ? សុំដឹង
-      - កម្រិតសិក្សាមានអ្វីខ្លះ? នៅហ្នឹង
-      - ថ្នាក់អនុបណ្ឌិតមានទេ?
-      - មានរៀនថ្នាក់បរិញ្ញាបត្ររងទេ?
-      - មានរៀនថ្នាក់បរិញ្ញាបត្ររងទេ? សុំដឹង
-      - បណ្តុះបណ្តាលកម្រិតណា?
-      - ថ្នាក់អនុបណ្ឌិតមានទេ? ថ្នាក់អនុមានអត់
-      - កម្រិតសិក្សាមានអ្វីខ្លះ? បញ្ជាក់ផង
-      - មាន doctorate អត់? សុំដឹង
-      - Phd degree? at Angkor
-      - Education levels what can I achieve
-      - Associate degree available? list them please
-      - Associate degree available? at Angkor
-      - Associate degree available?
-      - Associate degree available? please tell me
-      - Degrees offered
-      - Is there a masters program
-      - Associate degree available? what can I achieve
-      - Is there a masters program what can I achieve
-      - Phd degree? what can I achieve
-      - Phd degree? please tell me
-      - Education levels please tell me
-      - Phd degree?
-      - Is there a masters program please tell me
-      - Is there a masters program at Angkor
-      - Degrees offered at Angkor
-      - Degrees offered list them please
-      - Degrees offered please tell me
-      - Education levels
-
-  - intent: faq/dormitory
-    examples: |
-      - តើសាលាមានកន្លែងស្នាក់នៅទេ?
-      - មានអន្តេវាសិកដ្ឋានទេ?
-      - where can students stay?
-      - ខ្ញុំមកពីខេត្ត តើមានផ្ទះជួលសាលាទេ?
-      - dormitories
-      - កន្លែងស្នាក់នៅនិស្សិត
-      - កន្លែងស្នាក់នៅនិស្សិត នៅជិតសាលា
-      - មានកន្លែងស្នាក់នៅអត់? ប្រាប់ផង
-      - កន្លែងស្នាក់នៅនិស្សិត ថ្លៃប៉ុន្មានដែរ
-      - ផ្ទះជួលសាលាមានទេ
-      - ផ្ទះជួលសាលាមានទេ មានសុវត្ថិភាពទេ
-      - មានកន្លែងស្នាក់នៅអត់?
-      - សាលាមានអន្តេវាសិកដ្ឋានទេ? នៅជិតសាលា
-      - មកពីខេត្តគេងឯណា? ជួយពន្យល់
-      - សាលាមានអន្តេវាសិកដ្ឋានទេ? ប្រាប់ផង
-      - សាលាមានអន្តេវាសិកដ្ឋានទេ? មានសុវត្ថិភាពទេ
-      - សាលាមានអន្តេវាសិកដ្ឋានទេ?
-      - ផ្ទះជួលសាលាមានទេ នៅជិតសាលា
-      - កន្លែងស្នាក់នៅនិស្សិត ជួយពន្យល់
-      - ផ្ទះជួលសាលាមានទេ ជួយពន្យល់
-      - មកពីខេត្តគេងឯណា? ថ្លៃប៉ុន្មានដែរ
-      - មកពីខេត្តគេងឯណា? ប្រាប់ផង
-      - សាលាមានអន្តេវាសិកដ្ឋានទេ? ថ្លៃប៉ុន្មានដែរ
-      - មកពីខេត្តគេងឯណា? មានសុវត្ថិភាពទេ
-      - មានកន្លែងស្នាក់នៅអត់? ថ្លៃប៉ុន្មានដែរ
-      - ផ្ទះជួលសាលាមានទេ ប្រាប់ផង
-      - កន្លែងស្នាក់នៅនិស្សិត ប្រាប់ផង
-      - ផ្ទះជួលសាលាមានទេ ថ្លៃប៉ុន្មានដែរ
-      - មកពីខេត្តគេងឯណា?
-      - មានកន្លែងស្នាក់នៅអត់? មានសុវត្ថិភាពទេ
-      - មានកន្លែងស្នាក់នៅអត់? នៅជិតសាលា
-      - មានកន្លែងស្នាក់នៅអត់? ជួយពន្យល់
-      - សាលាមានអន្តេវាសិកដ្ឋានទេ? ជួយពន្យល់
-      - កន្លែងស្នាក់នៅនិស្សិត មានសុវត្ថិភាពទេ
-      - មកពីខេត្តគេងឯណា? នៅជិតសាលា
-      - Accommodation is there any?
-      - Accommodation on campus
-      - Dormitories where to stay
-      - Accommodation for students
-      - Hostel available is there any?
-      - Hostel available tell me info
-      - Student housing tell me info
-      - Dormitories tell me info
-      - Dormitories for students
-      - Hostel available
-      - A place to live? on campus
-      - Student housing on campus
-      - Hostel available for students
-      - Accommodation
-      - A place to live? tell me info
-      - Student housing is there any?
-      - A place to live? where to stay
-      - Hostel available on campus
-      - Dormitories is there any?
-      - A place to live? for students
-
-  - intent: faq/tuition
-    examples: |
-      - តម្លៃសិក្សាប៉ុន្មាន?
-      - បង់លុយប៉ុន្មានក្នុងមួយឆ្នាំ?
-      - how much is the tuition fee?
-      - តម្លៃសាលាថ្លៃទេ?
-      - cost of studying
-      - តម្លៃឆ្នាំនេះប៉ុន្មាន? តើថ្លៃដែរទេ
-      - ថ្លៃឈ្នួលសិក្សា ពន្យល់ផង
-      - ថ្លៃឈ្នួលសិក្សា មួយឆ្នាំប៉ុន្មាន
-      - តម្លៃសិក្សា? ថ្លៃបង់
-      - តម្លៃសិក្សា? ពន្យល់ផង
-      - ថ្លៃសាលាថ្លៃទេ? ថ្លៃបង់
-      - ថ្លៃសាលាថ្លៃទេ? ពន្យល់ផង
-      - តម្លៃសិក្សា? មួយឆ្នាំប៉ុន្មាន
-      - តម្លៃឆ្នាំនេះប៉ុន្មាន? បង់១ឆមាសប៉ុន្មាន
-      - បង់លុយរៀនប៉ុន្មាន? តើថ្លៃដែរទេ
-      - តម្លៃឆ្នាំនេះប៉ុន្មាន? មួយឆ្នាំប៉ុន្មាន
-      - តម្លៃឆ្នាំនេះប៉ុន្មាន?
-      - តម្លៃសិក្សា? តើថ្លៃដែរទេ
-      - បង់លុយរៀនប៉ុន្មាន? មួយឆ្នាំប៉ុន្មាន
-      - បង់លុយរៀនប៉ុន្មាន? ថ្លៃបង់
-      - តម្លៃសិក្សា? បង់១ឆមាសប៉ុន្មាន
-      - តម្លៃឆ្នាំនេះប៉ុន្មាន? ប្រាប់ខ្ញុំ
-      - ថ្លៃឈ្នួលសិក្សា
-      - ថ្លៃសាលាថ្លៃទេ? បង់១ឆមាសប៉ុន្មាន
-      - ថ្លៃឈ្នួលសិក្សា បង់១ឆមាសប៉ុន្មាន
-      - ថ្លៃឈ្នួលសិក្សា ថ្លៃបង់
-      - តម្លៃសិក្សា? ប្រាប់ខ្ញុំ
-      - បង់លុយរៀនប៉ុន្មាន?
-      - ថ្លៃសាលាថ្លៃទេ? តើថ្លៃដែរទេ
-      - បង់លុយរៀនប៉ុន្មាន? ប្រាប់ខ្ញុំ
-      - បង់លុយរៀនប៉ុន្មាន? ពន្យល់ផង
-      - តម្លៃឆ្នាំនេះប៉ុន្មាន? ថ្លៃបង់
-      - ថ្លៃឈ្នួលសិក្សា តើថ្លៃដែរទេ
-      - ថ្លៃឈ្នួលសិក្សា ប្រាប់ខ្ញុំ
-      - ថ្លៃសាលាថ្លៃទេ? ប្រាប់ខ្ញុំ
-      - តម្លៃឆ្នាំនេះប៉ុន្មាន? ពន្យល់ផង
-      - ថ្លៃសាលាថ្លៃទេ? មួយឆ្នាំប៉ុន្មាន
-      - តម្លៃសិក្សា?
-      - ថ្លៃសាលាថ្លៃទេ?
-      - បង់លុយរៀនប៉ុន្មាន? បង់១ឆមាសប៉ុន្មាន
-      - How much does it cost
-      - School pricing is it expensive?
-      - School pricing per year
-      - Cost of study
-      - Cost of study is it expensive?
-      - How much does it cost how much per semester
-      - Cost of study please give details
-      - Tuition fees
-      - Tuition info please give details
-      - School pricing
-      - Tuition info how much per semester
-      - Tuition info is it expensive?
-      - Tuition info per year
-      - How much does it cost is it expensive?
-      - Cost of study how much per semester
-      - How much does it cost per year
-      - School pricing how much per semester
-      - Cost of study per year
-      - Tuition fees is it expensive?
-      - School pricing please give details
-
-  # ===== CHITCHAT (Small Talk) =====
-  - intent: chitchat/bot_challenge
-    examples: |
-      - are you a bot?
-      - តើអ្នកជាមនុស្សមែនទេ?
-      - អ្នកគឺម៉ាស៊ីន?
-      - are you human?
-      - are you real?
-      - នរណាបង្កើតអ្នក?
-      - ខ្ញុំកំពុងនិយាយជាមួយរ៉ូបូត?
-      - robot
-      - អ្នកជានរណា? មែនទេ?
-      - អ្នកជានរណា? តើ
-      - នរណាជាអ្នកសរសេរអ្នក ខ្ញុំឆ្ងល់
-      - អ្នកជា bot មែន? មែនទេ?
-      - អ្នកជាមនុស្សមែនទេ?
-      - រ៉ូបូតឬមនុស្ស? អាអូន
-      - អ្នកជាមនុស្សមែនទេ? តើ
-      - រ៉ូបូតឬមនុស្ស?
-      - អ្នកជាមនុស្សមែនទេ? ខ្ញុំឆ្ងល់
-      - អ្នកជានរណា? ខ្ញុំឆ្ងល់
-      - អ្នកជា bot មែន? តើ
-      - អ្នកចេះនិយាយមែន តើ
-      - អ្នកជានរណា? អាអូន
-      - អ្នកចេះនិយាយមែន មែនទេ?
-      - អ្នកជាមនុស្សមែនទេ? ចេះ
-      - អ្នកចេះនិយាយមែន ចេះ
-      - នរណាជាអ្នកសរសេរអ្នក តើ
-      - អ្នកចេះនិយាយមែន
-      - អ្នកចេះនិយាយមែន ខ្ញុំឆ្ងល់
-      - រ៉ូបូតឬមនុស្ស? ចេះ
-      - នរណាជាអ្នកសរសេរអ្នក អាអូន
-      - នរណាជាអ្នកសរសេរអ្នក មែនទេ?
-      - រ៉ូបូតឬមនុស្ស? មែនទេ?
-      - អ្នកជា bot មែន? ចេះ
-      - នរណាជាអ្នកសរសេរអ្នក ចេះ
-      - រ៉ូបូតឬមនុស្ស? តើ
-      - អ្នកជា bot មែន?
-      - នរណាជាអ្នកសរសេរអ្នក
-      - អ្នកជា bot មែន? ខ្ញុំឆ្ងល់
-      - អ្នកជានរណា?
-      - រ៉ូបូតឬមនុស្ស? ខ្ញុំឆ្ងល់
-      - អ្នកជានរណា? ចេះ
-      - អ្នកចេះនិយាយមែន អាអូន
-      - អ្នកជាមនុស្សមែនទេ? មែនទេ?
-      - អ្នកជាមនុស្សមែនទេ? អាអូន
-      - អ្នកជា bot មែន? អាអូន
-      - Bot or human? answer me
-      - Who developed you answer me
-      - Who developed you really?
-      - Are you a bot? answer me
-      - Are you a bot? really?
-      - Who developed you I wonder
-      - Who developed you
-      - Bot or human?
-      - Who developed you tell me
-      - Are you real? really?
-      - Are you a bot?
-      - Are you an AI?
-      - Are you an AI? answer me
-      - Are you real? tell me
-      - Are you real?
-      - Are you a bot? tell me
-      - Are you an AI? I wonder
-      - Bot or human? I wonder
-      - Are you real? I wonder
-      - Bot or human? tell me
-
-  - intent: chitchat/compliment
-    examples: |
-      - អ្នកពូកែណាស់
-      - ល្អណាស់
-      - ពូកែម្ល៉េះ
-      - អ្នកឆ្លាតណាស់
-      - you are smart
-      - good job
-      - awesome
-      - nice
-      - clever bot
-      - ឈ្លាសវៃ អស្ចារ្យណាស់
-      - ឆ្លាតណាស់ ឡូយណាស់
-      - អស្ចារ្យ ខ្ញុំសរសើរ
-      - ឆ្លើយលឿនម៉្លេះ មែនទែន
-      - ល្អមែនទែន ឡូយណាស់
-      - អ្នកសាហាវម៉្លេះ អរគុណដែរ
-      - ឈ្លាសវៃ
-      - ពូកែណាស់ ឡូយណាស់
-      - ពូកែណាស់ អរគុណដែរ
-      - ឈ្លាសវៃ អរគុណដែរ
-      - ល្អមែនទែន អស្ចារ្យណាស់
-      - អស្ចារ្យ អស្ចារ្យណាស់
-      - ឆ្លាតណាស់ អរគុណដែរ
-      - អ្នកសាហាវម៉្លេះ អស្ចារ្យណាស់
-      - ឆ្លាតណាស់ មែនទែន
-      - អ្នកសាហាវម៉្លេះ ខ្ញុំសរសើរ
-      - ល្អមែនទែន
-      - ឈ្លាសវៃ ខ្ញុំសរសើរ
-      - ពូកែណាស់ ខ្ញុំសរសើរ
-      - ល្អមែនទែន មែនទែន
-      - ល្អមែនទែន ខ្ញុំសរសើរ
-      - អស្ចារ្យ ឡូយណាស់
-      - អ្នកសាហាវម៉្លេះ ឡូយណាស់
-      - ឈ្លាសវៃ ឡូយណាស់
-      - ឆ្លាតណាស់
-      - ឈ្លាសវៃ មែនទែន
-      - អ្នកសាហាវម៉្លេះ មែនទែន
-      - អស្ចារ្យ
-      - ពូកែណាស់
-      - ពូកែណាស់ អស្ចារ្យណាស់
-      - ឆ្លើយលឿនម៉្លេះ ខ្ញុំសរសើរ
-      - ល្អមែនទែន អរគុណដែរ
-      - ឆ្លើយលឿនម៉្លេះ
-      - ឆ្លាតណាស់ ខ្ញុំសរសើរ
-      - ឆ្លើយលឿនម៉្លេះ អស្ចារ្យណាស់
-      - ឆ្លាតណាស់ អស្ចារ្យណាស់
-      - ឆ្លើយលឿនម៉្លេះ ឡូយណាស់
-      - អស្ចារ្យ មែនទែន
-      - ពូកែណាស់ មែនទែន
-      - អស្ចារ្យ អរគុណដែរ
-      - អ្នកសាហាវម៉្លេះ
-      - ឆ្លើយលឿនម៉្លេះ អរគុណដែរ
-      - You are smart man
-      - Very cool wow
-      - Awesome
-      - You are smart
-      - Good job man
-      - Nice work impressive
-      - Clever bot wow
-      - Good job
-      - Well done man
-      - Well done wow
-      - Very cool good stuff
-      - Good job impressive
-      - Awesome good stuff
-      - Very cool
-      - You are smart really
-      - Well done
-      - Clever bot impressive
-      - Clever bot man
-      - Awesome really
-      - Nice work really
-
-  - intent: chitchat/thank_you
-    examples: |
-      - អរគុណ
-      - អរគុណច្រើន
-      - អរគុណណា
-      - ថែងយូ
-      - thank you
-      - thanks
-      - thx
-      - tnx
-      - អរគុណសំរាប់ការជួយ
-      - ថែងយូ ចាស
-      - ថែងយូ ពិតជាអរគុណ
-      - Thanks ពិតជាអរគុណ
-      - ថែងយូ
-      - អរគុណ បង
-      - អរគុណ បាទ
-      - ជួយបានច្រើនណាស់អរគុណ បាទលោកគ្រូ
-      - អរគុណច្រើន បង
-      - អរគុណច្រើន ចាសលោកគ្រូ
-      - អរគុណ បាទលោកគ្រូ
-      - អរគុណច្រើន បាទលោកគ្រូ
-      - ជួយបានច្រើនណាស់អរគុណ ណា
-      - ជួយបានច្រើនណាស់អរគុណ ចាសលោកគ្រូ
-      - អរគុណ ចាសលោកគ្រូ
-      - ជួយបានច្រើនណាស់អរគុណ បាទ
-      - Thanks ណា
-      - អរគុណច្រើន ចាស
-      - ថែងយូ ណា
-      - Thanks ចាស
-      - ជួយបានច្រើនណាស់អរគុណ ពិតជាអរគុណ
-      - ថែងយូ បាទ
-      - អរគុណច្រើន បាទ
-      - ជួយបានច្រើនណាស់អរគុណ ចាស
-      - Thanks បាទ
-      - ថែងយូ ចាសលោកគ្រូ
-      - ជួយបានច្រើនណាស់អរគុណ បង
-      - Thanks ចាសលោកគ្រូ
-      - ថែងយូ បង
-      - Thanks បាទលោកគ្រូ
-      - អរគុណច្រើន ណា
-      - អរគុណ
-      - ជួយបានច្រើនណាស់អរគុណ
-      - អរគុណ ពិតជាអរគុណ
-      - Thanks
-      - អរគុណ ណា
-      - Thanks បង
-      - អរគុណច្រើន ពិតជាអរគុណ
-      - អរគុណ ចាស
-      - ថែងយូ បាទលោកគ្រូ
-      - អរគុណច្រើន
-      - Much appreciated
-      - Thanks thanks again
-      - Tnx bot
-      - Thx thanks again
-      - Thank you very much
-      - Much appreciated thanks again
-      - Thx for your help
-      - Thanks for your help
-      - Thanks a lot for your help
-      - Tnx
-      - Thx very much
-      - Thank you for your help
-      - Thx bot
-      - Thanks a lot bot
-      - Thank you thanks again
-      - Thanks very much
-      - Thx
-      - Thanks a lot thanks again
-      - Thanks
-      - Thank you
-      
-  - intent: chitchat/how_are_you
-    examples: |
-      - សុខសប្បាយទេ?
-      - ម៉េចហើយ?
-      - how are you?
-      - ធ្វើអីហ្នឹង?
-      - តើអ្នកសុខសប្បាយទេ?
-      - អ្នកមានអារម្មណ៍យ៉ាងណា?
-      - នឹកទេ?
-      - មានអារម្មណ៍ម៉េច? ថ្ងៃនេះ
-      - រវល់អត់? បងប្អូនទាំងអស់គ្នា
-      - ម៉េចហើយ? តើប្អូន
-      - នឹកទេ? តើប្អូន
-      - សុខសប្បាយទេ? អ្នកមានអារម្មណ៍ដូចម្តេច
-      - មានអារម្មណ៍ម៉េច? បងប្អូនទាំងអស់គ្នា
-      - រវល់អត់?
-      - ម៉េចហើយ? ឥឡូវនេះ
-      - នឹកទេ? បងប្អូនទាំងអស់គ្នា
-      - រវល់អត់? អ្នកមានអារម្មណ៍ដូចម្តេច
-      - នឹកទេ? អ្នកមានអារម្មណ៍ដូចម្តេច
-      - សុខសប្បាយទេ?
-      - សួស្តីម៉េចហើយ អ្នកមានអារម្មណ៍ដូចម្តេច
-      - សុខសប្បាយទេ? តើប្អូន
-      - ម៉េចហើយ?
-      - នឹកទេ? ថ្ងៃនេះ
-      - មានអារម្មណ៍ម៉េច? តើប្អូន
-      - ម៉េចហើយ? អ្នកមានអារម្មណ៍ដូចម្តេច
-      - សុខសប្បាយទេ? បងប្អូនទាំងអស់គ្នា
-      - សួស្តីម៉េចហើយ
-      - មានអារម្មណ៍ម៉េច? អ្នកមានអារម្មណ៍ដូចម្តេច
-      - ម៉េចហើយ? បងប្អូនទាំងអស់គ្នា
-      - ម៉េចហើយ? ថ្ងៃនេះ
-      - សួស្តីម៉េចហើយ បងប្អូនទាំងអស់គ្នា
-      - សួស្តីម៉េចហើយ តើប្អូន
-      - សុខសប្បាយទេ? ឥឡូវនេះ
-      - សួស្តីម៉េចហើយ ឥឡូវនេះ
-      - មានអារម្មណ៍ម៉េច?
-      - សុខសប្បាយទេ? ថ្ងៃនេះ
-      - សួស្តីម៉េចហើយ ថ្ងៃនេះ
-      - រវល់អត់? ថ្ងៃនេះ
-      - នឹកទេ? ឥឡូវនេះ
-      - រវល់អត់? ឥឡូវនេះ
-      - រវល់អត់? តើប្អូន
-      - មានអារម្មណ៍ម៉េច? ឥឡូវនេះ
-      - What's up my friend
-      - How are you doing my friend
-      - What's up how do you feel
-      - How's it going how do you feel
-      - Feeling good? how do you feel
-      - Feeling good? bot
-      - How's it going my friend
-      - Feeling good? right now
-      - What's up today
-      - How are you doing bot
-      - How are you? my friend
-      - How are you doing how do you feel
-      - How are you? bot
-      - How's it going
-      - What's up
-      - How are you doing
-      - How are you?
-      - Feeling good? my friend
-      - Feeling good? today
-      - What's up bot
-
-  # ===== REGEX PATTERNS FOR ANSWER DETECTION =====
   - regex: answer_value
     examples: |
       - ^[0-4]$
-      - ^[០-៤]$
-
-  - regex: answer_question
-    examples: |
-      - ^[0-4]$
-      - ^[០-៤]$

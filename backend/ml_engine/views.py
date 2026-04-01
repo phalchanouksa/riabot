@@ -9,13 +9,177 @@ from django.views import View
 from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render
 
-from .services.recommender import MajorRecommender
+from .models import UniversityMajor
+from .services.recommender import MajorRecommender, ALL_MAJOR_NAMES
 from .services.data_processor import parse_json_to_flat_array, validate_csv_format
 from .services.tabnet_trainer import start_training_thread, TRAINING_DATA_DIR, TrainingState
 from .services.adaptive_recommender import AdaptiveRecommender
 from .services.model_manager import ModelManager
 from .services.question_mapper import get_question_info
 from .services.major_config import get_major_config_for_ui, save_enabled_majors, get_enabled_majors
+
+
+def _get_enabled_survey_category_ids():
+    """Return original major IDs enabled for the questionnaire/model."""
+    return sorted(
+        int(mid) for mid in get_enabled_majors()
+        if 0 <= int(mid) < 16
+    )
+
+
+def _get_allowed_university_category_ids():
+    """Return original major IDs that are both enabled and mapped to AU programs."""
+    enabled_major_ids = set(_get_enabled_survey_category_ids())
+    name_to_id = {name: mid for mid, name in ALL_MAJOR_NAMES.items()}
+    mapped_names = set(
+        UniversityMajor.objects.values_list('ml_category', flat=True).distinct()
+    )
+    allowed_ids = sorted(
+        mid for name, mid in name_to_id.items()
+        if name in mapped_names and mid in enabled_major_ids
+    )
+    return allowed_ids
+
+
+def _get_allowed_university_categories():
+    """Only show categories that are both trained and mapped to AU programs."""
+    return {
+        ALL_MAJOR_NAMES[mid]
+        for mid in _get_allowed_university_category_ids()
+        if mid in ALL_MAJOR_NAMES
+    }
+
+
+def _question_category_from_index(question_idx):
+    """Map a NEA question index back to its major category ID."""
+    if question_idx < 96:
+        return question_idx // 6
+    return (question_idx - 96) // 10
+
+
+def _filter_question_indices_for_survey(question_indices):
+    """Keep only questions that belong to enabled trained categories."""
+    allowed_ids = set(_get_enabled_survey_category_ids())
+    return [
+        int(question_idx)
+        for question_idx in question_indices
+        if _question_category_from_index(int(question_idx)) in allowed_ids
+    ]
+
+
+def _filter_answers_for_survey(answers):
+    """Ignore stale answers from categories that should not be in the survey."""
+    allowed_questions = set(_filter_question_indices_for_survey(range(256)))
+    return {
+        int(question_idx): int(value)
+        for question_idx, value in answers.items()
+        if int(question_idx) in allowed_questions
+    }
+
+
+def _build_university_recommendations(top_majors):
+    categories = [item.get("major") for item in top_majors if item.get("major")]
+    if not categories:
+        return []
+
+    programs_by_category = {}
+    queryset = (
+        UniversityMajor.objects
+        .filter(ml_category__in=categories)
+        .prefetch_related('career_paths')
+        .order_by('ml_category', 'official_name')
+    )
+
+    for obj in queryset:
+        programs_by_category.setdefault(obj.ml_category, []).append({
+            "name": obj.official_name,
+            "careers": list(obj.career_paths.values_list('job_title', flat=True)),
+        })
+
+    recommendations = []
+    for item in top_majors:
+        major_name = item.get("major")
+        programs = programs_by_category.get(major_name, [])
+        if not programs:
+            continue
+        recommendations.append({
+            "generic_major": major_name,
+            "confidence": item.get("confidence", 0.0),
+            "programs": programs,
+        })
+
+    return recommendations
+
+
+def _filter_result_for_university(result):
+    if not result or 'error' in result:
+        return result
+
+    allowed_categories = _get_allowed_university_categories()
+    filtered_top_3 = [
+        item for item in result.get('top_3', [])
+        if item.get('major') in allowed_categories
+    ]
+    university_recommendations = _build_university_recommendations(filtered_top_3)
+
+    # Keep only the categories that still have AU program mappings.
+    allowed_result_categories = {
+        item["generic_major"] for item in university_recommendations
+    }
+    filtered_top_3 = [
+        item for item in filtered_top_3
+        if item.get("major") in allowed_result_categories
+    ][:3]
+
+    filtered_result = dict(result)
+    filtered_result['top_3'] = filtered_top_3
+    filtered_result['university_recommendations'] = university_recommendations[:3]
+    filtered_result['xai_explanations'] = [
+        item for item in result.get('xai_explanations', [])
+        if item.get('category') in allowed_result_categories
+    ]
+    filtered_result['next_questions'] = _filter_question_indices_for_survey(
+        result.get('next_questions', [])
+    )
+
+    if filtered_top_3:
+        top_result = filtered_top_3[0]
+        filtered_result['major'] = top_result.get('major')
+        filtered_result['major_id'] = top_result.get('major_id')
+        filtered_result['confidence'] = top_result.get('confidence', 0.0)
+    else:
+        filtered_result['major'] = None
+        filtered_result['major_id'] = None
+        filtered_result['confidence'] = 0.0
+
+    return filtered_result
+
+
+def _build_university_explanation(result):
+    recommendations = result.get('university_recommendations', [])
+    if not recommendations:
+        return (
+            "បច្ចុប្បន្នមិនទាន់មានមុខជំនាញដែលផ្គូផ្គងនឹងទិន្នន័យបណ្តុះបណ្តាល "
+            "និងមាននៅសាកលវិទ្យាល័យអង្គរដែលអាចបង្ហាញបានទេ។"
+        )
+
+    top_result = recommendations[0]
+    explanation = (
+        f"ផ្អែកលើចម្លើយរបស់អ្នក ក្រុមជំនាញដែលសមស្របជាងគេគឺ "
+        f"**{top_result['generic_major']}** "
+        f"({top_result['confidence'] * 100:.0f}%)។ "
+        "ខាងក្រោមនេះគឺជាមុខជំនាញដែលមានបង្រៀននៅសាកលវិទ្យាល័យអង្គរ "
+        "និងអាជីពដែលពាក់ព័ន្ធ ដើម្បីឱ្យអ្នកពិចារណាបន្ត។"
+    )
+
+    if len(recommendations) > 1:
+        alternatives = ", ".join(
+            f"{item['generic_major']} ({item['confidence'] * 100:.0f}%)"
+            for item in recommendations[1:3]
+        )
+        explanation += f" ជម្រើសបន្ថែមដែលគួរពិចារណា៖ {alternatives}។"
+
+    return explanation
 
 @method_decorator(csrf_exempt, name='dispatch')
 class TrainingStatusView(View):
@@ -325,7 +489,10 @@ class AdaptiveStartView(View):
     """
     def get(self, request):
         try:
-            initial_questions = AdaptiveRecommender.get_initial_questions()
+            allowed_category_ids = _get_enabled_survey_category_ids()
+            initial_questions = AdaptiveRecommender.get_initial_questions(
+                allowed_categories=allowed_category_ids,
+            )
             return JsonResponse({
                 "questions": initial_questions,
                 "count": len(initial_questions),
@@ -358,10 +525,15 @@ class AdaptivePredictView(View):
             answers = data.get('answers', {})
             
             # Convert string keys to integers
-            answers_int = {int(k): int(v) for k, v in answers.items()}
+            answers_int = _filter_answers_for_survey(answers)
+            allowed_category_ids = _get_enabled_survey_category_ids()
             
             # Get prediction with adaptive logic
-            result = AdaptiveRecommender.predict_with_partial_data(answers_int)
+            result = AdaptiveRecommender.predict_with_partial_data(
+                answers_int,
+                allowed_categories=allowed_category_ids,
+            )
+            result = _filter_result_for_university(result)
             
             if 'error' in result:
                 return JsonResponse(result, status=500)
@@ -394,16 +566,22 @@ class AdaptiveExplainView(View):
             answers = data.get('answers', {})
             
             # Convert string keys to integers
-            answers_int = {int(k): int(v) for k, v in answers.items()}
+            answers_int = _filter_answers_for_survey(answers)
+            allowed_category_ids = _get_enabled_survey_category_ids()
             
             # Get prediction
-            result = AdaptiveRecommender.predict_with_partial_data(answers_int)
+            result = AdaptiveRecommender.predict_with_partial_data(
+                answers_int,
+                allowed_categories=allowed_category_ids,
+            )
+            result = _filter_result_for_university(result)
             
             if 'error' in result:
                 return JsonResponse(result, status=500)
             
-            # Generate explanation
-            explanation = AdaptiveRecommender.get_explanation(result, answers_int)
+            # Generate a university-specific explanation so the frontend only
+            # talks about majors that are actually available at AU.
+            explanation = _build_university_explanation(result)
             
             return JsonResponse({
                 "explanation": explanation,

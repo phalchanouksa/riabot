@@ -3,7 +3,7 @@ import TypingEffect from './TypingEffect';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import RadarChart from './RadarChart';
+import UniversityRecommendationsCard from './UniversityRecommendationsCard';
 
 const MessageList = ({ messages, loading, onButtonSubmit }) => {
   const [animatedMessages, setAnimatedMessages] = useState(new Set());
@@ -26,10 +26,13 @@ const MessageList = ({ messages, loading, onButtonSubmit }) => {
   const renderMessage = (message, index) => {
     const isUser = message.type === 'user';
     const isSystem = message.type === 'system';
+    const hasUniversityRecommendations =
+      message.custom?.type === 'university_recommendations' &&
+      Array.isArray(message.custom?.data);
 
     const messageClass = isUser ? 'user-message' : 'bot-message';
     const avatarContent = isUser ? ' ' : (isSystem ? ' ' : '');
-    const bubbleClass = `message-bubble ${isSystem ? 'system-bubble' : ''}`;
+    const bubbleClass = `message-bubble ${isSystem ? 'system-bubble' : ''} ${hasUniversityRecommendations ? 'structured-bubble' : ''}`;
 
     return (
       <div key={message.id} className={`message ${messageClass}`}>
@@ -45,8 +48,8 @@ const MessageList = ({ messages, loading, onButtonSubmit }) => {
               <ReactMarkdown>{message.content}</ReactMarkdown>
             )
           }
-          {message.custom && message.custom.type === 'radar_chart' && message.custom.data && (
-            <RadarChart data={message.custom.data} />
+          {hasUniversityRecommendations && (
+            <UniversityRecommendationsCard data={message.custom.data} />
           )}
           {message.buttons && message.buttons.length > 0 && (
             <div className="message-buttons" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

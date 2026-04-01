@@ -1,0 +1,82 @@
+version: "3.1"
+
+# ===============================================
+# RIA-BOT: END-TO-END CONVERSATION TESTS
+# ===============================================
+
+stories:
+
+- story: Full happy path (greeting + start survey + complete)
+  steps:
+  - user: |
+      សួស្តី
+    intent: greet
+  - action: utter_greet
+  - user: |
+      /start_survey
+    intent: start_survey
+  - action: action_start_survey
+  - slot_was_set:
+    - survey_active: true
+  - action: action_ask_next_question
+  # Simulating answering a question with a value of '3'
+  - user: |
+      3
+    intent: nlu_fallback  # or answer_question if you use that!
+  - action: action_default_fallback
+  - slot_was_set:
+    - answer_value: 3
+  # Then it process the answer
+  - action: action_process_answer
+  - action: action_ask_next_question
+
+- story: User asks about FAQ and then starts
+  steps:
+  - user: |
+      សួរពីសាលា
+    intent: faq
+  - action: utter_faq/general
+  - user: |
+      ចាប់ផ្តើមធ្វើតេស្ត
+    intent: start_survey
+  - action: action_start_survey
+  - action: action_ask_next_question
+
+- story: User stops midway and checks results
+  steps:
+  - user: |
+      /start_survey
+    intent: start_survey
+  - action: action_start_survey
+  - action: action_ask_next_question
+  - user: |
+      4
+    intent: nlu_fallback
+  - action: action_default_fallback
+  - slot_was_set:
+    - answer_value: 4
+  - action: action_process_answer
+  - action: action_ask_next_question
+  - user: |
+      ឈប់
+    intent: stop_survey
+  - action: action_stop_survey
+  - slot_was_set:
+    - survey_active: false
+  - user: |
+      លទ្ធផល
+    intent: show_results
+  - action: action_show_results
+
+- story: Chit-chat fallback during survey
+  steps:
+  - user: |
+      /start_survey
+    intent: start_survey
+  - action: action_start_survey
+  - action: action_ask_next_question
+  - user: |
+      អ្នកគិតយ៉ាងម៉េចដែរ?
+    intent: chitchat
+  - action: action_fallback_chat
+  - action: utter_fallback_chat_active

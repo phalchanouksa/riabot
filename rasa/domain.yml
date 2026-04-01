@@ -1,34 +1,25 @@
-# ============================================
-# RiaBot Domain - University Major Counselor Chatbot
-# ============================================
-# Rasa acts as the dialogue controller
-# TabNet ML model handles major predictions
-# ============================================
-
 version: "3.1"
 
 intents:
   - greet
   - goodbye
-  - affirm
-  - deny
+  - ask_help
+  - ask_bot_name
+  - ask_major_recommendation
   - start_survey
   - answer_question
-  - ask_explain
-  - ask_about_major
-  - ask_help
-  - mood_great
-  - mood_unhappy
-  - out_of_scope
   - stop_survey
   - show_results
+  - open_faq
+  - open_faq_general
+  - open_faq_faculties
+  - open_faq_scholarships
+  - open_faq_tuition
+  - open_faq_contact
   - nlu_fallback
-  - faq
-  - chitchat
 
 entities:
   - answer_value
-  - major_name
 
 slots:
   survey_active:
@@ -40,7 +31,7 @@ slots:
 
   current_question_idx:
     type: float
-    initial_value: -1
+    initial_value: 0
     influence_conversation: false
     mappings:
       - type: custom
@@ -105,173 +96,168 @@ slots:
       - type: from_entity
         entity: answer_value
 
+  last_processed_message_id:
+    type: text
+    initial_value: null
+    influence_conversation: false
+    mappings:
+      - type: custom
+
 responses:
   utter_greet:
-    - text: "សួស្តី! 😊 ខ្ញុំឈ្មោះ RiaBot ជាជំនួយការណែនាំការជ្រើសរើសជំនាញសិក្សាសម្រាប់សិស្សទើបបញ្ចប់ថ្នាក់ទី១២ (Grade 12)។\n\n🔹 **សួរព័ត៌មានពីសាលា**\n🔹 ឬចុចប៊ូតុងខាងក្រោមដើម្បីធ្វើតេស្តរើសជំនាញ!"
+    - text: "សួស្តី! ខ្ញុំជា RiaBot។ ខ្ញុំអាចជួយអ្នកឆ្លើយសំណួរអំពីសាកលវិទ្យាល័យអង្គរ ឬជួយចាប់ផ្តើមតេស្តណែនាំជំនាញសិក្សា។"
       buttons:
-        - title: "🚀 ចាប់ផ្តើមធ្វើតេស្ត (Start)"
+        - title: "ចាប់ផ្តើមតេស្ត"
           payload: "/start_survey"
-        - title: "🏫 ព័ត៌មានសាលា (FAQ)"
-          payload: "/faq"
+        - title: "ព័ត៌មានសាលា"
+          payload: "/open_faq"
+
+  utter_bot_name:
+    - text: "ខ្ញុំឈ្មោះ RiaBot។ ខ្ញុំជាជំនួយការសម្រាប់ឆ្លើយសំណួរអំពីសាកលវិទ្យាល័យអង្គរ និងជួយចាប់ផ្តើមតេស្តណែនាំជំនាញសិក្សា។"
 
   utter_goodbye:
-    - text: "អរគុណ! សូមជួបគ្នាម្តងទៀត 😊 សូមជូនពរឲ្យអ្នកទទួលបានជោគជ័យ! 🌟"
+    - text: "អរគុណដែលបានប្រើ RiaBot។ សូមជួបគ្នាម្តងទៀត។"
 
   utter_help:
-    - text: "សួស្តី! ខ្ញុំជារ៉ូបូត (RiaBot) ដែលអាចជួយអ្នកបានដូចតុខាងក្រោម៖"
+    - text: "ខ្ញុំអាចជួយបាន ២ ចម្បង៖ សំណួរអំពីសាកលវិទ្យាល័យអង្គរ និងតេស្តណែនាំជំនាញសិក្សា។"
       buttons:
-        - title: "🎯 ចាប់ផ្តើមធ្វើតេស្ត (Start Test)"
+        - title: "ចាប់ផ្តើមតេស្ត"
           payload: "/start_survey"
-        - title: "💡 ពន្យល់លទ្ធផល (Explain)"
-          payload: "/ask_explain"
-        - title: "🏫 ព័ត៌មានសាលា (FAQ)"
-          payload: "/faq"
-        - title: "💬 ជជែកលេង (Chit-chat)"
-          payload: "/chitchat"
+        - title: "ព័ត៌មានសាលា"
+          payload: "/open_faq"
 
-  utter_faq/general:
-    - text: "🏫 **សាកលវិទ្យាល័យអង្គរ (Angkor University - A.U.)** គឺជាគ្រឹះស្ថានឧត្តមសិក្សាឯកជនមួយត្រូវបានបង្កើតឡើងតាំងពីឆ្នាំ ២០០៤ ដោយឯកឧត្តម អ្នកឧកញ៉ា បណ្ឌិត សៀង ណាំ។ សាលាត្រូវបានទទួលស្គាល់ដោយក្រសួងអប់រំ យុវជន និងកីឡា និងក្រសួងសុខាភិបាល។"
-    
-  utter_faq/faculties:
-    - text: "សាកលវិទ្យាល័យអង្គរមានមហាវិទ្យាល័យចំនួន ៧ គឺ៖\n1️⃣ សុខភាពសាធារណៈ\n2️⃣ វិទ្យាសាស្ត្រ និងបច្ចេកវិទ្យា\n3️⃣ វិស្វកម្ម និងស្ថាបត្យកម្ម\n4️⃣ គ្រប់គ្រងពាណិជ្ជកម្ម និងទេសចរណ៍\n5️⃣ សង្គមវិទ្យា និងច្បាប់\n6️⃣ មនុស្សសាស្ត្រ និងភាសាបរទេស\n7️⃣ កសិកម្ម"
-
-  utter_faq/scholarships:
-    - text: "🎓 សាកលវិទ្យាល័យអង្គរមានផ្តល់អាហារូបករណ៍ពិសេសសម្រាប់និស្សិតដែលទើបបញ្ចប់មធ្យមសិក្សាទុតិយភូមិ (បាក់ឌុប)! ការផ្តល់នេះគឺដើម្បីជួយគាំទ្រផ្នែកហិរញ្ញវត្ថុសម្រាប់សិស្សខ្វះខាត និងអ្នកដែលរៀនពូកែ។"
-
-  utter_faq/clubs:
-    - text: "កំឡុងពេលសិក្សា និស្សិតអាចចូលរួមក្លឹបនិងសកម្មភាពជាច្រើនដូចជា៖\n- កម្មវិធីចុះកម្មសិក្សាក្នុងនិងក្រៅស្រុក\n- សហភាពសហព័ន្ធយុវជនកម្ពុជា (UYFC)\n- ក្លឹបកីឡា (Sport Club)\n- ក្លឹបអ្នកអាននិងសរសេរ (Reading & Academic Authoring)\n- និងក្លឹបអ្នកស្ម័គ្រចិត្តផ្សេងៗទៀត!"
-
-  utter_faq/contact:
-    - text: "📍 **ទីតាំង:** បុរីសៀងណាំ ភូមិខ្នារ សង្កាត់ជ្រាវ ក្រុងសៀមរាប ខេត្តសៀមរាប\n📞 **ទូរស័ព្ទ:** 017 671 825 / 070 853 537\n✉️ **អ៊ីមែល:** info@angkor.edu.kh"
-
-  utter_faq/history:
-    - text: "🏫 សាកលវិទ្យាល័យអង្គរ (Angkor University) ត្រូវបានបង្កើតឡើងនៅឆ្នាំ២០០៤ ដោយឯកឧត្តម អ្នកឧកញ៉ា បណ្ឌិត សៀង ណាំ មានទីតាំងនៅក្នុងខេត្តសៀមរាប។ ជាសាកលវិទ្យាល័យដែលទទួលបានការគាំទ្រ និងទទួលស្គាល់យ៉ាងពេញលេញពីក្រសួងអប់រំ យុវជន និងកីឡា។"
-
-  utter_faq/degrees:
-    - text: "🎓 សាលាផ្តល់ជូនកម្មវិធីសិក្សាចាប់ពីកម្រិត៖\n- បរិញ្ញាបត្ររង (Associate Degree)\n- បរិញ្ញាបត្រ (Bachelor's Degree)\n- អនុបណ្ឌិត (Master's Degree)"
-
-  utter_faq/dormitory:
-    - text: "🏢 សម្រាប់និស្សិតមកពីខេត្តឆ្ងាយ សាកលវិទ្យាល័យអង្គរមានផ្តល់ជូនកន្លែងស្នាក់នៅ ប្រកបដោយសុវត្ថិភាព និងភាពងាយស្រួលសម្រាប់ការរៀនសូត្រ។"
-
-  utter_faq/tuition:
-    - text: "💰 សម្រាប់ព័ត៌មានលម្អិតទាក់ទងនឹងតម្លៃសិក្សា (Tuition Fee) សូមទាក់ទងមកកាន់លេខ 017 671 825 / 070 853 537 ឬឆាតទៅកាន់ហ្វេសប៊ុកផេក 'Angkor University' ផ្ទាល់តែម្តង ដើម្បីទទួលបានការផ្តល់ជូន និងអាហារូបករណ៍ថ្មីៗ! 😊"
-
-  utter_ask_continue:
-    - text: "តើអ្នកចង់បន្តការធ្វើតេស្តដែរឬទេ? (បាទ,ចាស/ទេ) (yes/no)"
-
-  utter_survey_stopped:
-    - text: "ការធ្វើតេស្តត្រូវបានបញ្ឈប់! 🛑 ទិន្នន័យរបស់អ្នកត្រូវបានកត់ត្រា។ សូមវាយពាក្យ 'ចាប់ផ្តើម' ដើម្បីបន្ត ឬ 'លទ្ធផល' ដើម្បីមើលការទាយទុកបណ្តោះអាសន្ន។"
-
-  utter_default_fallback:
-    - text: "ខ្ញុំមិនសូវយល់ពីអ្វីដែលអ្នកសរសេរទេ 😅\n\nតើអ្នកចង់ធ្វើអ្វីបន្ត?"
+  utter_major_guidance:
+    - text: "ខ្ញុំអាចជួយណែនាំថា អ្នកគួររៀនជំនាញអ្វី តាមរយៈតេស្តណែនាំជំនាញសិក្សា។ សូមចាប់ផ្តើមតេស្ត ដើម្បីឲ្យខ្ញុំវាយតម្លៃចំណាប់អារម្មណ៍ និងជំនាញរបស់អ្នកជាមុនសិន។"
       buttons:
-        - title: "🎯 ចាប់ផ្តើមធ្វើតេស្ត (Start)"
+        - title: "ចាប់ផ្តើមតេស្ត"
           payload: "/start_survey"
-        - title: "❓ មើលជំនួយ (Help)"
-          payload: "/ask_help"
-        - title: "🏫 សួរពីសាលា (FAQ)"
-          payload: "/faq"
+        - title: "ព័ត៌មានសាលា"
+          payload: "/open_faq"
 
-  utter_chitchat/bot_challenge:
-    - text: "ខ្ញុំជាកម្មវិធី Chatbot AI បង្កើតឡើងដើម្បីជួយសិស្សានុសិស្សជ្រើសរើសជំនាញសិក្សា។ ខ្ញុំមិនមែនជាមនុស្សទេ!"
+  utter_faq_menu:
+    - text: "សូមជ្រើសរើសប្រធានបទដែលអ្នកចង់សួរអំពីសាកលវិទ្យាល័យអង្គរ។"
+      buttons:
+        - title: "ព័ត៌មានទូទៅ"
+          payload: "/open_faq_general"
+        - title: "មហាវិទ្យាល័យ"
+          payload: "/open_faq_faculties"
+        - title: "អាហារូបករណ៍"
+          payload: "/open_faq_scholarships"
+        - title: "តម្លៃសិក្សា"
+          payload: "/open_faq_tuition"
+        - title: "ទំនាក់ទំនង"
+          payload: "/open_faq_contact"
+        - title: "ចាប់ផ្តើមតេស្ត"
+          payload: "/start_survey"
 
-  utter_chitchat/compliment:
-    - text: "អរគុណច្រើន! ខ្ញុំរីករាយណាស់ដែលបានជួយអ្នក។ 💙"
-    - text: "អរគុណ! អ្នកក៏ឆ្លាតដែរ! 😊"
+  utter_faq_menu_general:
+    - text: "សាកលវិទ្យាល័យអង្គរ (Angkor University) គឺជាគ្រឹះស្ថានឧត្តមសិក្សាឯកជនមួយនៅខេត្តសៀមរាប ដែលត្រូវបានបង្កើតឡើងនៅឆ្នាំ ២០០៤ និងទទួលស្គាល់ដោយក្រសួងពាក់ព័ន្ធ។"
+      buttons:
+        - title: "មហាវិទ្យាល័យ"
+          payload: "/open_faq_faculties"
+        - title: "ទំនាក់ទំនង"
+          payload: "/open_faq_contact"
+        - title: "ត្រឡប់ទៅ FAQ"
+          payload: "/open_faq"
 
-  utter_chitchat/thank_you:
-    - text: "គ្មានបញ្ហាទេ! បើមានអ្វីឲ្យខ្ញុំជួយទៀត ប្រាប់បានណា។"
-    - text: "ដោយក្តីរីករាយ! 😊"
+  utter_faq_menu_faculties:
+    - text: "សាកលវិទ្យាល័យអង្គរមានមហាវិទ្យាល័យសំខាន់ៗដូចជា សុខភាពសាធារណៈ, វិទ្យាសាស្ត្រ និងបច្ចេកវិទ្យា, វិស្វកម្ម និងស្ថាបត្យកម្ម, គ្រប់គ្រងពាណិជ្ជកម្ម និងទេសចរណ៍, សង្គមវិទ្យា និងច្បាប់, មនុស្សសាស្ត្រ និងភាសាបរទេស និងកសិកម្ម។"
+      buttons:
+        - title: "តម្លៃសិក្សា"
+          payload: "/open_faq_tuition"
+        - title: "ទំនាក់ទំនង"
+          payload: "/open_faq_contact"
+        - title: "ត្រឡប់ទៅ FAQ"
+          payload: "/open_faq"
 
-  utter_chitchat/how_are_you:
-    - text: "ខ្ញុំសុខសប្បាយជាទេ! ចុះអ្នកវិញ? តើខ្ញុំអាចជួយអ្វីបានខ្លះថ្ងៃនេះ?"
-    - text: "អរគុណ ខ្ញុំមិនចេះហត់នោះទេព្រោះខ្ញុំជា AI! តើមានអ្វីឲ្យខ្ញុំជួយអ្នកទេ?"
+  utter_faq_menu_scholarships:
+    - text: "សាកលវិទ្យាល័យអង្គរផ្តល់អាហារូបករណ៍ពិសេសសម្រាប់និស្សិតថ្មីដែលបានបញ្ចប់មធ្យមសិក្សាទុតិយភូមិ ដើម្បីលើកទឹកចិត្តសិស្សដែលមានលទ្ធផលសិក្សាល្អ។\n\nកម្រិតអាហារូបករណ៍មានដូចជា៖\nនិទ្ទេស A = 100% ពេញកម្មវិធីសិក្សា\nនិទ្ទេស B = 50% ពេញកម្មវិធីសិក្សា\nនិទ្ទេស C = 25% ពេញកម្មវិធីសិក្សា\nនិទ្ទេស D = 15% ពេញកម្មវិធីសិក្សា\nនិទ្ទេស E = 15% ពេញកម្មវិធីសិក្សា\nនិទ្ទេស F = 15% ពេញកម្មវិធីសិក្សា\n\nសម្រាប់ព័ត៌មានបន្ថែម សូមទាក់ទងសាកលវិទ្យាល័យអង្គរដោយផ្ទាល់។"
+      buttons:
+        - title: "តម្លៃសិក្សា"
+          payload: "/open_faq_tuition"
+        - title: "ទំនាក់ទំនង"
+          payload: "/open_faq_contact"
+        - title: "ត្រឡប់ទៅ FAQ"
+          payload: "/open_faq"
 
-  # ===== SURVEY TEMPLATES =====
+  utter_faq_menu_tuition:
+    - text: "សម្រាប់ព័ត៌មានលម្អិតអំពីតម្លៃសិក្សា សូមទាក់ទងសាកលវិទ្យាល័យអង្គរដោយផ្ទាល់តាមលេខ 017 671 825 / 070 853 537 ឬតាម Facebook Page របស់សាកលវិទ្យាល័យ។"
+      buttons:
+        - title: "អាហារូបករណ៍"
+          payload: "/open_faq_scholarships"
+        - title: "ទំនាក់ទំនង"
+          payload: "/open_faq_contact"
+        - title: "ត្រឡប់ទៅ FAQ"
+          payload: "/open_faq"
+
+  utter_faq_menu_contact:
+    - text: "ទីតាំង៖ បុរីសៀងណាំ ភូមិខ្នារ សង្កាត់ជ្រាវ ក្រុងសៀមរាប ខេត្តសៀមរាប\nទូរស័ព្ទ៖ 017 671 825 / 070 853 537\nអ៊ីមែល៖ info@angkor.edu.kh"
+      buttons:
+        - title: "ព័ត៌មានទូទៅ"
+          payload: "/open_faq_general"
+        - title: "ចាប់ផ្តើមតេស្ត"
+          payload: "/start_survey"
+        - title: "ត្រឡប់ទៅ FAQ"
+          payload: "/open_faq"
+
   utter_survey_welcome:
-    - text: "សួស្តី! 😊 រីករាយដែលបានស្គាល់។ ខ្ញុំ RiaBot ជាជំនួយការដែលអាចជួយសិស្សថ្នាក់ទី១២ ស្វែងរកមុខជំនាញដែលស័ក្តិសមបំផុត។\nតោះ! យើងចាប់ផ្តើមធ្វើតេស្តទាំងអស់គ្នា ដោយគ្រាន់តែឆ្លើយសំណួរងាយៗដោយប្រើលេខធម្មតា។"
-    - text: "សួស្តី! 😊 សូមស្វាគមន៍មកកាន់ការធ្វើតេស្តរើសជំនាញសិក្សានៅថ្នាក់មហាវិទ្យាល័យ! 🎯\nដំបូងយើងនឹងសួរពីចំណង់ចំណូលចិត្ត បន្ទាប់មកសួរពីជំនាញពិតប្រាកដរបស់អ្នក។ សូមឆ្លើយបញ្ជាក់សំណួរនីមួយៗដោយប្រើលេខ។"
+    - text: "យើងនឹងចាប់ផ្តើមតេស្តណែនាំជំនាញសិក្សា។ សូមឆ្លើយសំណួរនីមួយៗដោយប្រើលេខតាមជម្រើសដែលបង្ហាញ។"
 
   utter_ask_question:
-    - text: "❓ **សំណួរទី {question_num}:** {question_text}\n_{scale}_\n\n---\n📊 វគ្គ: {stage} | ភាពជាក់លាក់: {confidence}%"
+    - text: "សំណួរទី {question_num}: {question_text}\n{scale}\n\nវគ្គបច្ចុប្បន្ន៖ {stage} | ភាពជឿជាក់៖ {confidence}%"
 
   utter_ask_question_fallback:
-    - text: "**សំណួរទី {question_num}:** សូមវាយតម្លៃតម្រុយ (សំណួរ {question_idx})\n{scale}"
+    - text: "សំណួរទី {question_num}: សូមជ្រើសចម្លើយរបស់អ្នកសម្រាប់សំណួរ {question_idx}\n{scale}"
 
   utter_no_answers:
-    - text: "អ្នកមិនទាន់បានឆ្លើយសំណួរនៅឡើយទេ! សូមវាយ **'start'** ឬ **'ចាប់ផ្តើម'** ដើម្បីចាប់ផ្តើមធ្វើតេស្ត។"
-    - text: "ការធ្វើតេស្តមិនទាន់មានចម្លើយទេ។ សូមវាយ **'ចាប់ផ្តើម'** ដើម្បីចាប់ផ្តើមឡើងវិញ!"
+    - text: "មិនទាន់មានចម្លើយសម្រាប់បង្ហាញលទ្ធផលទេ។ សូមវាយ 'ចាប់ផ្តើម' ដើម្បីធ្វើតេស្ត។"
 
   utter_survey_results:
-    - text: "🎉 **សូមអបអរសាទរ!** អ្នកបានបញ្ចប់ការវាយតម្លៃដោយជោគជ័យ。\nដោយផ្អែកលើចម្លើយទាំង {num_answers} នេះគឺជាជំនាញដែលស័ក្តិសមបំផុតសម្រាប់អ្នកក្នុងការបន្តការសិក្សានៅសាកលវិទ្យាល័យ!\n\n---\n**លទ្ធផលវាយតម្លៃរបស់អ្នក:**{results_summary}\n\n💡 **មូលហេតុដែលខ្ញុំណែនាំ:**\n{explanation}\n\n---\n_ផ្អែកលើសំណួរដែលបានឆ្លើយចំនួន {num_answers}_"
-
-  utter_ml_error:
-    - text: "សូមអភ័យទោស មិនអាចបង្ហាញលទ្ធផលបានទេ ព្រោះប្រព័ន្ធម៉ាស៊ីនមិនដំណើរការជាបណ្ដោះអាសន្ន។ សូមទំនាក់ទំនងមកកាន់សាលាដោយផ្ទាល់។"
-
-  utter_no_survey_active:
-    - text: "បច្ចុប្បន្នមិនមានការវាយតម្លៃកំពុងដំណើរការទេ។ សូមវាយ **'start'** ឬ **'ចាប់ផ្តើម'** អីឡូវនេះ!"
-
-  utter_invalid_answer_number:
-    - text: "សូមបញ្ចូលចម្លើយជា **លេខ** (០-៤) ប៉ុណ្ណោះ។ សូមសាកល្បងម្តងទៀត!"
-
-  utter_invalid_answer_interest:
-    - text: "សម្រាប់សំណួរចំណង់ចំណូលចិត្ត សូមឆ្លើយជាលេខ **១ ដល់ ៤** (១=មិនចូលចិត្តសោះ, ៤=ចូលចិត្តខ្លាំង)"
-
-  utter_invalid_answer_skill:
-    - text: "សម្រាប់សំណួរជំនាញ សូមឆ្លើយជាលេខ **០ ដល់ ៣** (០=គ្មានជំនាញសោះ, ៣=ជំនាញខ្លាំងពូកែ)"
+    - text: "លទ្ធផលណែនាំជំនាញសិក្សារបស់អ្នកបានរួចរាល់។\n\n{results_summary}\n\nមូលហេតុសង្ខេប៖\n{explanation}"
 
   utter_survey_results_partial:
-    - text: "🎉 នេះជាលទ្ធផលបណ្តោះអាសន្ននៃការណែនាំជំនាញមហាវិទ្យាល័យរបស់អ្នក!\nជំនាញដែលស័ក្តិសមបំផុត: **{major}** (ភាពជាក់លាក់ {confidence}%)。\n\n---\n**មុខជំនាញដែលត្រូវបានណែនាំបន្ថែម:**{results_summary}\n\n💡 **មូលហេតុ:**\n{explanation}\n\n---\n_ចំនួនសំណួរដែលបានឆ្លើយ: {num_answers}_"
+    - text: "នេះជាលទ្ធផលបណ្តោះអាសន្នរបស់អ្នក៖ **{major}** (ភាពជឿជាក់ {confidence}%)\n\n{results_summary}\n\nមូលហេតុសង្ខេប៖\n{explanation}"
 
-  utter_no_recommendation_yet:
-    - text: "មិនទាន់មានលទ្ធផលដើម្បីពន្យល់ទេ។ សូមឆ្លើយសំណួរតេស្តជាមុនសិន! វាយ **'start'** ឬ **'ចាប់ផ្តើម'**។"
+  utter_ml_error:
+    - text: "សូមអភ័យទោស។ ប្រព័ន្ធមិនអាចបង្ហាញលទ្ធផលបាននៅពេលនេះទេ។ សូមសាកល្បងម្តងទៀតបន្តិចក្រោយ។"
 
-  utter_explain_results:
-    - text: "💡 **ហេតុអ្វីបានជានេះជាមុខជំនាញ {major}?**\n\nអ្នកបានបង្ហាញពីចំណូលចិត្តខ្លាំងលើផ្នែកផ្សេងៗគ្នាចំនួន {interest_count} ព្រមទាំងមានជំនាញជាក់លាក់លើផ្នែកចំនួន {skill_count} ចេញពីសំណួរសរុបចំនួន {total_answers} ។\n\nចំណុចទាំងអស់នេះស្របគ្នាយ៉ាងខ្លាំងជាមួយជំនាញ **{major}**។ អ្នកដែលមានសកម្មភាពស្រដៀងគ្នានេះនិងមានសមត្ថភាពជាមូលដ្ឋាន តែងតែទទួលបានជោគជ័យក្នុងការសិក្សា។ ជាមួយនឹងភាពសមស្រប {confidence}%, យើងជឿជាក់ថាជំនាញនេះនឹងនាំអ្នកទៅរកភាពជោគជ័យ!"
+  utter_no_survey_active:
+    - text: "បច្ចុប្បន្នមិនមានតេស្តកំពុងដំណើរការទេ។ សូមវាយ 'ចាប់ផ្តើម' ដើម្បីចាប់ផ្តើមតេស្ត។"
 
-  utter_explain_error:
-    - text: "សូមអភ័យទោស។ ខ្ញុំមិនទាន់អាចបង្កើតការពន្យល់លម្អិតបានទេនៅពេលនេះ។ សូមសាកល្បងដោយការវាយពាក្យ 'ពន្យល់' ម្តងទៀត។"
+  utter_invalid_answer_number:
+    - text: "សូមឆ្លើយជាលេខតែប៉ុណ្ណោះ។"
 
-  utter_fallback_chat:
-    - text: "សួស្តី! ខ្ញុំឈ្មោះ RiaBot ជាជំនួយការណែនាំជ្រើសរើសជំនាញសិក្សាថ្នាក់មហាវិទ្យាល័យសម្រាប់សិស្សទើបបញ្ចប់ថ្នាក់ទី១២។ តើមានអ្វីឲ្យខ្ញុំជួយទេ?"
-      buttons:
-        - title: "🎯 ចាប់ផ្តើមធ្វើតេស្ត (Start)"
-          payload: "/start_survey"
-        - title: "❓ មើលជំនួយ (Help)"
-          payload: "/ask_help"
+  utter_invalid_answer_interest:
+    - text: "សម្រាប់សំណួរចំណាប់អារម្មណ៍ សូមឆ្លើយជាលេខ 1 ដល់ 4។"
 
-  utter_fallback_chat_active:
-    - text: "_អ្នកកំពុងដំណើរការឆ្លើយសំណួរធ្វើតេស្ត។ សូមឆ្លើយតបជាលេខបន្តទៀត ឬវាយពាក្យ 'stop' ដើម្បីសម្រាកសិន!_"
+  utter_invalid_answer_skill:
+    - text: "សម្រាប់សំណួរជំនាញ សូមឆ្លើយជាលេខ 0 ដល់ 3។"
 
   utter_survey_paused:
-    - text: "ការធ្វើតេស្តត្រូវបានផ្អាក! ដោយផ្អែកលើសំណួរចំនួន {num_answers} ដែលអ្នកបានឆ្លើយ:\n\n**ការទស្សន៍ទាយបណ្ដោះអាសន្ន:** {major} (ភាពជាក់លាក់ {confidence}%)\n\nវាយពាក្យ **'ចាប់ផ្តើម'** ឬ **'start'** ដើម្បីបន្តដំណើរការតេស្ត។"
+    - text: "តេស្តត្រូវបានផ្អាកសិន។ លទ្ធផលបណ្តោះអាសន្នរបស់អ្នកគឺ **{major}** (ភាពជឿជាក់ {confidence}%)។ វាយ 'ចាប់ផ្តើម' ដើម្បីបន្ត។"
 
   utter_survey_paused_no_pred:
-    - text: "ការធ្វើតេស្តត្រូវបានផ្អាកជាមួយនឹងចម្លើយដែលបានកត់ត្រាចំនួន {num_answers}។ វាយពាក្យ **'ចាប់ផ្តើម'** ដើម្បីបន្ត។"
-    
+    - text: "តេស្តត្រូវបានផ្អាកសិន។ វាយ 'ចាប់ផ្តើម' ដើម្បីបន្ត។"
+
   utter_survey_stopped_new:
-    - text: "បានបញ្ឈប់ការធ្វើតេស្ត។ វាយពាក្យ **'ចាប់ផ្តើម'** ដើម្បីចាប់ផ្តើមឡើងវិញ!"
+    - text: "បានបញ្ឈប់តេស្ត។ វាយ 'ចាប់ផ្តើម' ដើម្បីចាប់ផ្តើមឡើងវិញ។"
 
   utter_fallback_rephrase:
-    - text: "អូ៎! ខ្ញុំនៅរៀនសូត្រនៅឡើយ ដូច្នេះខ្ញុំមិនសូវយល់ពីអ្វីដែលអ្នកទើបតែសរសេរទេ 😅\n\nតើអ្នកចង់ធ្វើអ្វីបន្ត?"
+    - text: "ខ្ញុំអាចជួយបានតែព័ត៌មានអំពីសាកលវិទ្យាល័យអង្គរ ឬការចាប់ផ្តើមតេស្តណែនាំជំនាញសិក្សាប៉ុណ្ណោះ។"
       buttons:
-        - title: "🎯 ចាប់ផ្តើមធ្វើតេស្ត (Start)"
+        - title: "ព័ត៌មានសាលា"
+          payload: "/open_faq"
+        - title: "ចាប់ផ្តើមតេស្ត"
           payload: "/start_survey"
-        - title: "🏫 សួរពីសាលា (FAQ)"
-          payload: "/faq"
-        - title: "❓ មើលជំនួយ (Help)"
-          payload: "/ask_help"
 
 actions:
   - action_start_survey
   - action_ask_next_question
   - action_process_answer
   - action_show_results
-  - action_explain_recommendation
-  - action_fallback_chat
   - action_stop_survey
   - action_default_fallback
 
 session_config:
   session_expiration_time: 60
-  carry_over_slots_to_new_session: true
+  carry_over_slots_to_new_session: false

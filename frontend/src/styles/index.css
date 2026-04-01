@@ -324,10 +324,39 @@ body {
 .chat-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 1rem;
   border-bottom: 1px solid var(--border);
   min-height: 60px;
   position: relative;
+}
+
+.chat-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.copy-chat-log-btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.copy-chat-log-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.copy-chat-log-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .header-logo {
@@ -570,6 +599,7 @@ body {
   border-radius: 1.5rem;
   max-width: 70%;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .bot-message .message-bubble {
@@ -587,6 +617,143 @@ body {
   background-color: var(--surface);
   color: var(--text-muted);
   border: 1px solid var(--border);
+}
+
+.message-bubble p + p {
+  margin-top: 0.75rem;
+}
+
+.message-bubble ul,
+.message-bubble ol {
+  margin: 0.75rem 0 0 1rem;
+}
+
+.message-bubble li + li {
+  margin-top: 0.35rem;
+}
+
+.message-bubble.structured-bubble {
+  max-width: min(92%, 760px);
+  width: 100%;
+  padding: 0;
+  background: transparent;
+}
+
+.university-results-card {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  padding: 1rem;
+}
+
+.university-results-header {
+  margin-bottom: 1rem;
+}
+
+.university-results-header h3 {
+  font-size: 1.05rem;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+
+.university-results-header p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.university-results-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.university-result-group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.university-result-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.university-result-group-header > div {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.university-result-rank {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  background: var(--primary);
+  color: white;
+  flex-shrink: 0;
+}
+
+.university-result-group h4 {
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.university-result-confidence {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.university-program-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.university-program-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  padding: 0.9rem;
+}
+
+.university-program-card h5 {
+  font-size: 0.98rem;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.university-career-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.university-career-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.university-career-section ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.university-career-section li {
+  color: var(--text);
 }
 
 /* Loading animation for bot thinking */

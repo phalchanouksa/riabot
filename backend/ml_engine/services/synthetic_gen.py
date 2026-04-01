@@ -199,9 +199,21 @@ def generate_base_data(n_samples=5000, enabled_majors=None):
         for idx in vary_indices:
             variation = np.random.choice([-1, 1])
             X[i, idx] = X[i, idx] + variation
-        
+
+        # ===== STEP 11b: "LAZY STUDENT" SIMULATOR (NEW) =====
+        # Real students often skip huge chunks of the survey, leaving 0s. 
+        # We need the model to learn to predict from very sparse data.
+        if np.random.rand() < 0.15: # 15% of students get tired and skip sections
+            # Randomly zero out half of the interest questions
+            lazy_idx = np.random.choice(96, 48, replace=False)
+            X[i, lazy_idx] = 0
+            
+            # Randomly zero out 80% of the skill questions (many students skip this)
+            lazy_skills = np.random.choice(range(96, 256), 120, replace=False)
+            X[i, lazy_skills] = 0
+
         # ===== STEP 12: Final Clamping =====
-        X[i, :96] = np.clip(X[i, :96], 1, 4)    # Interests: 1-4
+        X[i, :96] = np.clip(X[i, :96], 0, 4)    # Interests: Allow 0 for skipped
         X[i, 96:] = np.clip(X[i, 96:], 0, 3)    # Skills: 0-3
     
     return X, y

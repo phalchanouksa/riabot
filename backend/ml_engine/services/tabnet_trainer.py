@@ -157,9 +157,14 @@ def train_hybrid_model_task(n_synthetic=5000, max_epochs=20, patience=5, batch_s
                 state.log(f"Merging {len(X_real)} real samples with {len(X_syn)} synthetic samples.")
                 # Create default weights for synthetic data
                 weights_syn = np.ones(len(X_syn))
+                
+                # We over-index heavily on real CSV records so the model memorizes these 149 rows
+                real_multiplier = max(1.0, (len(X_syn) / max(1, len(X_real))) * 2.5)
+                state.log(f"Applying real data weight boost multiplier: {real_multiplier:.2f}x")
+                
                 X_final = np.concatenate((X_syn, X_real), axis=0)
                 y_final = np.concatenate((y_syn, y_real), axis=0)
-                weights_final = np.concatenate((weights_syn, weights_real), axis=0)
+                weights_final = np.concatenate((weights_syn, weights_real * real_multiplier), axis=0)
             else:
                 state.log(f"Using only real data ({len(X_real)} samples).")
                 X_final = X_real
