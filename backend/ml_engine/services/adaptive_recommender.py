@@ -41,6 +41,8 @@ class AdaptiveRecommender:
     SKILL_SIGNAL_WEIGHT = 0.25
     SKILL_MODEL_INFLUENCE = 0.25
     TARGET_SKILL_RATIO = 0.25
+    SKILL_INTRODUCTION_INTEREST_COUNT = 10
+    MIN_SKILL_QUESTIONS_BEFORE_STOP = 2
     
     # Question importance weights (will be computed from model)
     # Higher weight = more important question
@@ -123,8 +125,14 @@ class AdaptiveRecommender:
         recent_categories = cls._get_recent_categories(answered_indices, limit=4)
         
         # If we have current probabilities, boost questions for the most likely majors.
+        top_model_categories = []
         if current_probabilities is not None:
             top_3_classes = np.argsort(current_probabilities)[-3:][::-1]
+            top_model_categories = [
+                MajorRecommender.get_original_major_id(int(class_idx))
+                for class_idx in top_3_classes
+                if MajorRecommender.get_original_major_id(int(class_idx)) in cls._normalize_allowed_categories(allowed_categories)
+            ]
 
             for class_idx in top_3_classes:
                 major_id = MajorRecommender.get_original_major_id(int(class_idx))
@@ -160,6 +168,15 @@ class AdaptiveRecommender:
                 )[:3]
             ]
 
+        priority_skill_categories = []
+        for category in top_signal_categories + top_model_categories:
+            if category not in priority_skill_categories:
+                priority_skill_categories.append(category)
+        skill_sampling_needed = (
+            interest_count >= min(len(focus_categories), cls.SKILL_INTRODUCTION_INTEREST_COUNT) and
+            skill_count < cls.MIN_SKILL_QUESTIONS_BEFORE_STOP
+        )
+
         for pos, question_idx in enumerate(unanswered):
             is_interest = question_idx < 96
             category = question_idx // 6 if is_interest else (question_idx - 96) // 10
@@ -188,7 +205,15 @@ class AdaptiveRecommender:
                     priorities[pos] *= 0.85
             else:
                 priorities[pos] *= 0.45
-                if interest_count < min(len(focus_categories), 10):
+                if skill_sampling_needed and category in priority_skill_categories[:3]:
+                    priorities[pos] *= 6.5
+                elif category in priority_skill_categories[:3] and skill_count < max(cls.MIN_SKILL_QUESTIONS_BEFORE_STOP + 1, 4):
+                    priorities[pos] *= 1.8
+
+                if (
+                    interest_count < min(len(focus_categories), cls.SKILL_INTRODUCTION_INTEREST_COUNT) and
+                    not (skill_sampling_needed and category in priority_skill_categories[:3])
+                ):
                     priorities[pos] *= 0.20
                 if current_skill_ratio >= cls.TARGET_SKILL_RATIO:
                     priorities[pos] *= 0.25
@@ -203,6 +228,27 @@ class AdaptiveRecommender:
 
         # Sort by priority (descending)
         sorted_indices = [unanswered[i] for i in np.argsort(priorities)[::-1]]
+
+        if skill_sampling_needed:
+            needed_skill_questions = max(0, cls.MIN_SKILL_QUESTIONS_BEFORE_STOP - skill_count)
+            preferred_skill_questions = [
+                idx for idx in sorted_indices
+                if idx >= 96 and ((idx - 96) // 10) in priority_skill_categories[:3]
+            ]
+            fallback_skill_questions = [idx for idx in sorted_indices if idx >= 96]
+            selected_skill_questions = preferred_skill_questions[:needed_skill_questions]
+            if len(selected_skill_questions) < needed_skill_questions:
+                for idx in fallback_skill_questions:
+                    if idx not in selected_skill_questions:
+                        selected_skill_questions.append(idx)
+                    if len(selected_skill_questions) >= needed_skill_questions:
+                        break
+
+            if selected_skill_questions:
+                sorted_indices = selected_skill_questions + [
+                    idx for idx in sorted_indices
+                    if idx not in selected_skill_questions
+                ]
         
         return sorted_indices
     
@@ -471,6 +517,7 @@ class AdaptiveRecommender:
         focus_categories = set(cls._get_focus_categories(allowed_categories))
         covered_categories = cls._get_categories_covered(answered_indices or [])
         interest_covered, skill_covered = cls._get_dimension_coverage(answered_indices or [])
+        interest_count, skill_count = cls._get_dimension_counts(answered_indices or [])
 
         focus_category_coverage = len(covered_categories & focus_categories)
         focus_interest_coverage = len(interest_covered & focus_categories)
@@ -484,6 +531,12 @@ class AdaptiveRecommender:
             return True
 
         if focus_interest_coverage < min_interest_coverage:
+            return True
+
+        if (
+            questions_asked >= min(target_stop_questions, cls.SKILL_INTRODUCTION_INTEREST_COUNT + cls.MIN_SKILL_QUESTIONS_BEFORE_STOP) and
+            skill_count < cls.MIN_SKILL_QUESTIONS_BEFORE_STOP
+        ):
             return True
 
         if focus_skill_coverage < min_skill_coverage:
@@ -873,6 +926,13 @@ class AdaptiveRecommender:
 
         interest_covered, skill_covered = cls._get_dimension_coverage(list(answers.keys()))
         if top_major_original not in interest_covered:
+            return False
+
+        skill_count = sum(1 for idx in answers if idx >= 96)
+        if skill_count < cls.MIN_SKILL_QUESTIONS_BEFORE_STOP:
+            return False
+
+        if top_major_original not in skill_covered and skill_count < max(cls.MIN_SKILL_QUESTIONS_BEFORE_STOP + 1, 3):
             return False
 
         return True

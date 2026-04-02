@@ -129,6 +129,20 @@ def _normalize_non_negative_scores(score_map):
     return {key: value / total for key, value in cleaned.items()}
 
 
+def _normalize_shifted_scores(score_map):
+    cleaned = {int(key): float(value) for key, value in (score_map or {}).items()}
+    if not cleaned:
+        return {}
+
+    min_value = min(cleaned.values())
+    max_value = max(cleaned.values())
+    if max_value - min_value <= 1e-9:
+        return {key: 0.0 for key in cleaned}
+
+    shifted = {key: value - min_value for key, value in cleaned.items()}
+    return _normalize_non_negative_scores(shifted)
+
+
 def _get_model_probability_by_original_major(result):
     probability_by_original_major = {}
     for class_idx, probability in enumerate(result.get('probabilities', []) or []):
@@ -150,12 +164,18 @@ def _build_exploratory_top_majors(result, max_items=3):
     preference_scores = _to_int_keyed_scores(result.get('preference_scores'))
     answer_signals = _to_int_keyed_scores(result.get('answer_signals'))
     model_probabilities = _get_model_probability_by_original_major(result)
+    low_interest_profile = bool(result.get('low_interest_profile'))
 
+    raw_preferences = {
+        major_id: preference_scores.get(major_id, 0.0)
+        for major_id in candidate_major_ids
+    }
     positive_preferences = {
-        major_id: max(0.0, preference_scores.get(major_id, 0.0))
+        major_id: max(0.0, raw_preferences.get(major_id, 0.0))
         for major_id in candidate_major_ids
     }
     normalized_preferences = _normalize_non_negative_scores(positive_preferences)
+    normalized_least_disliked_preferences = _normalize_shifted_scores(raw_preferences)
 
     positive_signals = {
         major_id: max(0.0, answer_signals.get(major_id, 0.0))
@@ -174,6 +194,18 @@ def _build_exploratory_top_majors(result, max_items=3):
                 0.75 * normalized_preferences.get(major_id, 0.0) +
                 0.15 * normalized_signals.get(major_id, 0.0) +
                 0.10 * normalized_model.get(major_id, 0.0)
+            )
+            for major_id in candidate_major_ids
+        }
+    elif any(value > 0 for value in normalized_least_disliked_preferences.values()):
+        preference_weight = 0.88 if low_interest_profile else 0.80
+        signal_weight = 0.04 if low_interest_profile else 0.08
+        model_weight = 1.0 - preference_weight - signal_weight
+        combined_scores = {
+            major_id: (
+                preference_weight * normalized_least_disliked_preferences.get(major_id, 0.0) +
+                signal_weight * normalized_signals.get(major_id, 0.0) +
+                model_weight * normalized_model.get(major_id, 0.0)
             )
             for major_id in candidate_major_ids
         }

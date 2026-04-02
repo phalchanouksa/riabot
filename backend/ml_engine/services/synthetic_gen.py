@@ -29,7 +29,7 @@ MAJOR_CORRELATIONS = {
 }
 
 
-def generate_base_data(n_samples=5000, enabled_majors=None):
+def generate_base_data(n_samples=5000, enabled_majors=None, seed=None):
     """
     Generate highly realistic synthetic student data.
     
@@ -42,6 +42,9 @@ def generate_base_data(n_samples=5000, enabled_majors=None):
         X: Features array of shape (n_samples, 256)
         y: Labels array of shape (n_samples,) — remapped to 0..N-1
     """
+    if seed is not None:
+        np.random.seed(seed)
+
     if enabled_majors is None:
         enabled_majors = list(range(16))
     
@@ -128,6 +131,8 @@ def generate_base_data(n_samples=5000, enabled_majors=None):
         # ===== STEP 6: Boost Correlated Majors (NEW!) =====
         if not is_confused and MAJOR_CORRELATIONS[primary_major]:
             for related_major in MAJOR_CORRELATIONS[primary_major]:
+                if related_major not in enabled_set:
+                    continue
                 # Related majors get medium scores (more realistic!)
                 int_start, int_end = related_major * 6, (related_major + 1) * 6
                 skill_start, skill_end = 96 + related_major * 10, 96 + (related_major + 1) * 10

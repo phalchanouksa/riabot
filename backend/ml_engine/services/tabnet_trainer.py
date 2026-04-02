@@ -2,6 +2,7 @@ import os
 import json
 import numpy as np
 import threading
+import random
 from pytorch_tabnet.tab_model import TabNetClassifier
 from .synthetic_gen import generate_base_data
 from .data_processor import load_all_real_data
@@ -14,6 +15,44 @@ MODEL_PATH = os.path.join(SAVED_MODELS_DIR, 'major_model.zip')
 from pytorch_tabnet.callbacks import Callback
 
 TRAINING_STATE_FILE = os.path.join(SAVED_MODELS_DIR, 'training_state.json')
+TRAINING_SEED = 42
+DEFAULT_INTEREST_VALUE = 2.5
+DEFAULT_SKILL_VALUE = 1.5
+
+
+def _set_training_seed(seed: int):
+    np.random.seed(seed)
+    random.seed(seed)
+    try:
+        import torch
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+    except Exception:
+        pass
+
+
+def _neutralize_disabled_major_features(X, enabled_majors):
+    """
+    When some majors are disabled in the survey, those question blocks are not
+    asked at inference time. Neutralize the same feature blocks during training
+    so the model sees data closer to live usage.
+    """
+    if X is None:
+        return None
+
+    enabled_set = set(enabled_majors or [])
+    disabled_majors = [mid for mid in range(16) if mid not in enabled_set]
+    if not disabled_majors:
+        return np.asarray(X, dtype=np.float32)
+
+    X_masked = np.asarray(X, dtype=np.float32).copy()
+    for major_id in disabled_majors:
+        int_start, int_end = major_id * 6, (major_id + 1) * 6
+        skill_start, skill_end = 96 + major_id * 10, 96 + (major_id + 1) * 10
+        X_masked[:, int_start:int_end] = DEFAULT_INTEREST_VALUE
+        X_masked[:, skill_start:skill_end] = DEFAULT_SKILL_VALUE
+    return X_masked
 
 class TrainingState:
     """
@@ -136,11 +175,17 @@ def train_hybrid_model_task(n_synthetic=5000, max_epochs=20, patience=5, batch_s
             save_enabled_majors(enabled_majors)  # Persist the choice
         
         state.log(f"Training with {len(enabled_majors)} enabled majors: {enabled_majors}")
+        _set_training_seed(TRAINING_SEED)
+        state.log(f"Using deterministic training seed: {TRAINING_SEED}")
         
         # 1. Load Synthetic Data (if needed)
         if n_synthetic > 0:
             state.log(f"Generating NEW synthetic data ({n_synthetic} samples) for {len(enabled_majors)} classes...")
-            X_syn, y_syn = generate_base_data(n_samples=n_synthetic, enabled_majors=enabled_majors)
+            X_syn, y_syn = generate_base_data(
+                n_samples=n_synthetic,
+                enabled_majors=enabled_majors,
+                seed=TRAINING_SEED,
+            )
         else:
             state.log("Skipping synthetic data generation (n_synthetic=0).")
             X_syn, y_syn = None, None
@@ -148,6 +193,11 @@ def train_hybrid_model_task(n_synthetic=5000, max_epochs=20, patience=5, batch_s
         # 2. Load Real Data
         state.log(f"Loading real data from {TRAINING_DATA_DIR}...")
         X_real, y_real, weights_real = load_all_real_data(TRAINING_DATA_DIR, enabled_majors=enabled_majors)
+
+        # Keep training inputs aligned with the deployed survey: disabled-major
+        # blocks should look like unanswered neutral values, not answered data.
+        X_syn = _neutralize_disabled_major_features(X_syn, enabled_majors)
+        X_real = _neutralize_disabled_major_features(X_real, enabled_majors)
         
         # 3. Merge (including weights)
         n_real_samples = len(X_real) if X_real is not None else 0
@@ -222,7 +272,7 @@ def train_hybrid_model_task(n_synthetic=5000, max_epochs=20, patience=5, batch_s
             
         # 4. Train
         state.log("Initializing TabNetClassifier...")
-        clf = TabNetClassifier(verbose=0) # Disable default print
+        clf = TabNetClassifier(verbose=0, seed=TRAINING_SEED) # Disable default print
         
         state.log(f"Configuration: max_epochs={max_epochs}, patience={patience}, batch_size={batch_size}")
         state.log("Fitting model...")
@@ -353,6 +403,7 @@ def train_hybrid_model_task(n_synthetic=5000, max_epochs=20, patience=5, batch_s
             'n_real': n_real_samples,
             'total_samples': n_synthetic + n_real_samples,
             'enabled_majors': enabled_majors,
+            'seed': TRAINING_SEED,
             'final_loss': round(final_loss, 4) if final_loss else None,
             'stopped_epoch': actual_epochs,
             'best_epoch': (clf.best_epoch + 1) if hasattr(clf, 'best_epoch') else None,
