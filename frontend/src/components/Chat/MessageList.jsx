@@ -49,7 +49,12 @@ const MessageList = ({ messages, loading, onButtonSubmit }) => {
             )
           }
           {hasUniversityRecommendations && (
-            <UniversityRecommendationsCard data={message.custom.data} />
+            <UniversityRecommendationsCard
+              data={message.custom.data}
+              title={message.custom.title}
+              subtitle={message.custom.subtitle}
+              showConfidence={message.custom.show_confidence}
+            />
           )}
           {message.buttons && message.buttons.length > 0 && (
             <div className="message-buttons" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

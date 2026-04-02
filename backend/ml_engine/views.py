@@ -111,6 +111,103 @@ def _build_university_recommendations(top_majors):
     return recommendations
 
 
+def _to_int_keyed_scores(scores):
+    normalized = {}
+    for key, value in (scores or {}).items():
+        try:
+            normalized[int(key)] = float(value)
+        except (TypeError, ValueError):
+            continue
+    return normalized
+
+
+def _normalize_non_negative_scores(score_map):
+    cleaned = {int(key): max(0.0, float(value)) for key, value in (score_map or {}).items()}
+    total = sum(cleaned.values())
+    if total <= 0:
+        return {key: 0.0 for key in cleaned}
+    return {key: value / total for key, value in cleaned.items()}
+
+
+def _get_model_probability_by_original_major(result):
+    probability_by_original_major = {}
+    for class_idx, probability in enumerate(result.get('probabilities', []) or []):
+        original_major_id = MajorRecommender.get_original_major_id(int(class_idx))
+        probability_by_original_major[int(original_major_id)] = float(probability)
+    return probability_by_original_major
+
+
+def _build_exploratory_top_majors(result, max_items=3):
+    """
+    Build softer "directions to explore" from answer patterns first and model
+    output second. This is more stable for limited-data deployments than using
+    raw class probabilities directly.
+    """
+    candidate_major_ids = _get_allowed_university_category_ids()
+    if not candidate_major_ids:
+        return []
+
+    preference_scores = _to_int_keyed_scores(result.get('preference_scores'))
+    answer_signals = _to_int_keyed_scores(result.get('answer_signals'))
+    model_probabilities = _get_model_probability_by_original_major(result)
+
+    positive_preferences = {
+        major_id: max(0.0, preference_scores.get(major_id, 0.0))
+        for major_id in candidate_major_ids
+    }
+    normalized_preferences = _normalize_non_negative_scores(positive_preferences)
+
+    positive_signals = {
+        major_id: max(0.0, answer_signals.get(major_id, 0.0))
+        for major_id in candidate_major_ids
+    }
+    normalized_signals = _normalize_non_negative_scores(positive_signals)
+
+    normalized_model = _normalize_non_negative_scores({
+        major_id: model_probabilities.get(major_id, 0.0)
+        for major_id in candidate_major_ids
+    })
+
+    if any(value > 0 for value in normalized_preferences.values()):
+        combined_scores = {
+            major_id: (
+                0.75 * normalized_preferences.get(major_id, 0.0) +
+                0.15 * normalized_signals.get(major_id, 0.0) +
+                0.10 * normalized_model.get(major_id, 0.0)
+            )
+            for major_id in candidate_major_ids
+        }
+    elif any(value > 0 for value in normalized_signals.values()):
+        combined_scores = {
+            major_id: (
+                0.80 * normalized_signals.get(major_id, 0.0) +
+                0.20 * normalized_model.get(major_id, 0.0)
+            )
+            for major_id in candidate_major_ids
+        }
+    else:
+        combined_scores = normalized_model
+
+    ranked_major_ids = sorted(
+        candidate_major_ids,
+        key=lambda major_id: combined_scores.get(major_id, 0.0),
+        reverse=True,
+    )
+
+    top_majors = []
+    for major_id in ranked_major_ids[:max_items]:
+        major_name = ALL_MAJOR_NAMES.get(int(major_id))
+        if not major_name:
+            continue
+        top_majors.append({
+            'major': major_name,
+            'major_id': int(major_id),
+            'confidence': float(combined_scores.get(major_id, 0.0)),
+        })
+
+    return top_majors
+
+
 def _filter_result_for_university(result):
     if not result or 'error' in result:
         return result
@@ -131,9 +228,25 @@ def _filter_result_for_university(result):
         if item.get("major") in allowed_result_categories
     ][:3]
 
+    exploratory_top_3 = _build_exploratory_top_majors(result, max_items=3)
+    exploratory_university_recommendations = _build_university_recommendations(exploratory_top_3)
+    allowed_exploratory_categories = {
+        item["generic_major"] for item in exploratory_university_recommendations
+    }
+    exploratory_top_3 = [
+        item for item in exploratory_top_3
+        if item.get("major") in allowed_exploratory_categories
+    ][:3]
+
     filtered_result = dict(result)
     filtered_result['top_3'] = filtered_top_3
     filtered_result['university_recommendations'] = university_recommendations[:3]
+    filtered_result['soft_top_3'] = exploratory_top_3[:2] if exploratory_top_3 else filtered_top_3[:2]
+    filtered_result['soft_university_recommendations'] = (
+        exploratory_university_recommendations[:2]
+        if exploratory_university_recommendations
+        else university_recommendations[:2]
+    )
     filtered_result['xai_explanations'] = [
         item for item in result.get('xai_explanations', [])
         if item.get('category') in allowed_result_categories
@@ -141,6 +254,23 @@ def _filter_result_for_university(result):
     filtered_result['next_questions'] = _filter_question_indices_for_survey(
         result.get('next_questions', [])
     )
+
+    if filtered_result.get('final_state') == 'unclear':
+        if filtered_result['soft_top_3']:
+            top_result = filtered_result['soft_top_3'][0]
+            filtered_result['top_3'] = filtered_result['soft_top_3']
+            filtered_result['major'] = top_result.get('major')
+            filtered_result['major_id'] = top_result.get('major_id')
+            filtered_result['confidence'] = top_result.get('confidence', 0.0)
+            filtered_result['university_recommendations'] = filtered_result['soft_university_recommendations']
+            filtered_result['display_state'] = 'exploratory'
+        else:
+            filtered_result['major'] = None
+            filtered_result['major_id'] = None
+            filtered_result['confidence'] = 0.0
+            filtered_result['university_recommendations'] = []
+            filtered_result['display_state'] = 'unclear'
+        return filtered_result
 
     if filtered_top_3:
         top_result = filtered_top_3[0]
@@ -151,11 +281,20 @@ def _filter_result_for_university(result):
         filtered_result['major'] = None
         filtered_result['major_id'] = None
         filtered_result['confidence'] = 0.0
+    filtered_result['display_state'] = 'final'
 
     return filtered_result
 
 
 def _build_university_explanation(result):
+    if result.get('final_state') == 'unclear':
+        return (
+            "លទ្ធផលបច្ចុប្បន្ននៅមិនទាន់ច្បាស់គ្រប់គ្រាន់ទេ។ "
+            "ចម្លើយរបស់អ្នកមិនទាន់បង្ហាញទិសដៅច្បាស់ទៅកាន់មុខជំនាញណាមួយនៅឡើយ "
+            "ដូច្នេះប្រព័ន្ធមិនទាន់សន្និដ្ឋានជាចុងក្រោយទេ។ "
+            "សូមឆ្លើយបន្ថែម ឬធ្វើតេស្តម្តងទៀតដោយផ្អែកលើចំណាប់អារម្មណ៍ និងជំនាញពិតរបស់អ្នក។"
+        )
+
     recommendations = result.get('university_recommendations', [])
     if not recommendations:
         return (
@@ -180,6 +319,109 @@ def _build_university_explanation(result):
         explanation += f" ជម្រើសបន្ថែមដែលគួរពិចារណា៖ {alternatives}។"
 
     return explanation
+
+def _build_university_explanation(result):
+    if result.get('final_state') == 'unclear':
+        if result.get('low_interest_profile'):
+            return (
+                "លទ្ធផលបច្ចុប្បន្ននៅមិនទាន់អាចសន្និដ្ឋានជាចុងក្រោយបានទេ។ "
+                "ចម្លើយរបស់អ្នកបង្ហាញថា អ្នកមិនសូវចាប់អារម្មណ៍លើមុខជំនាញភាគច្រើនដែលបានសួរនៅឡើយ "
+                "ដូច្នេះប្រព័ន្ធមិនចង់បង្ខំផ្តល់លទ្ធផលដែលអាចមិនត្រឹមត្រូវទេ។ "
+                "សូមធ្វើតេស្តម្តងទៀតដោយឆ្លើយតាមចំណាប់អារម្មណ៍ពិតរបស់អ្នក ឬស្វែងរកផ្នែកដែលអ្នកចូលចិត្តជាងគេជាមុនសិន។"
+            )
+        return (
+            "លទ្ធផលបច្ចុប្បន្ននៅមិនទាន់ច្បាស់គ្រប់គ្រាន់ទេ។ "
+            "ចម្លើយរបស់អ្នកនៅមិនទាន់បង្ហាញទិសដៅច្បាស់ទៅកាន់មុខជំនាញណាមួយនៅឡើយ "
+            "ដូច្នេះប្រព័ន្ធមិនទាន់សន្និដ្ឋានជាចុងក្រោយទេ។ "
+            "សូមឆ្លើយបន្ថែម ឬធ្វើតេស្តម្តងទៀតដោយផ្អែកលើចំណាប់អារម្មណ៍ពិតរបស់អ្នក។"
+        )
+
+    recommendations = result.get('university_recommendations', [])
+    if not recommendations:
+        return (
+            "បច្ចុប្បន្នមិនទាន់មានមុខជំនាញដែលផ្គូផ្គងនឹងទិន្នន័យបណ្ដុះបណ្ដាល "
+            "និងមាននៅសាកលវិទ្យាល័យអង្គរដែលអាចបង្ហាញបានទេ។"
+        )
+
+    top_result = recommendations[0]
+    explanation = (
+        f"ផ្អែកលើចម្លើយរបស់អ្នក ក្រុមជំនាញដែលសមស្របជាងគេគឺ "
+        f"**{top_result['generic_major']}** "
+        f"({top_result['confidence'] * 100:.0f}%)។ "
+        "ខាងក្រោមនេះគឺជាមុខជំនាញដែលមានបង្រៀននៅសាកលវិទ្យាល័យអង្គរ "
+        "និងអាជីពដែលពាក់ព័ន្ធ ដើម្បីឱ្យអ្នកពិចារណាបន្ត។"
+    )
+
+    if len(recommendations) > 1:
+        alternatives = ", ".join(
+            f"{item['generic_major']} ({item['confidence'] * 100:.0f}%)"
+            for item in recommendations[1:3]
+        )
+        explanation += f" ជម្រើសបន្ថែមដែលគួរពិចារណា៖ {alternatives}។"
+
+    return explanation
+
+
+def _build_university_explanation(result):
+    if result.get('final_state') == 'unclear':
+        soft_recommendations = result.get('soft_university_recommendations', [])
+        if soft_recommendations:
+            top_result = soft_recommendations[0]
+            explanation = (
+                f"ផ្អែកលើចម្លើយរបស់អ្នក ទិសដៅដែលអ្នកអាចសាកស្វែងយល់មុនគេគឺ "
+                f"**{top_result['generic_major']}** "
+                f"({top_result['confidence'] * 100:.0f}%)។ "
+                "ខាងក្រោមនេះគឺជាមុខជំនាញនៅសាកលវិទ្យាល័យអង្គរដែលអាចសមស្របសម្រាប់អ្នកឱ្យពិចារណាជាមុន។"
+            )
+
+            if len(soft_recommendations) > 1:
+                alternatives = ", ".join(
+                    f"{item['generic_major']} ({item['confidence'] * 100:.0f}%)"
+                    for item in soft_recommendations[1:3]
+                )
+                explanation += f" ទិសដៅបន្ថែមដែលអាចសាកស្វែងយល់មាន៖ {alternatives}។"
+
+            if result.get('low_interest_profile'):
+                explanation += " ដោយសារចម្លើយរបស់អ្នកមានកម្រិតចាប់អារម្មណ៍ទាបលើមុខជំនាញជាច្រើន សូមយកវាជាទិសដៅសាកស្វែងយល់ មិនមែនជាការសន្និដ្ឋានចុងក្រោយទេ។"
+
+            return explanation
+
+        if result.get('low_interest_profile'):
+            return (
+                "ចម្លើយរបស់អ្នកបង្ហាញថា អ្នកមិនសូវចាប់អារម្មណ៍លើមុខជំនាញភាគច្រើនដែលបានសួរនៅឡើយ។ "
+                "សូមធ្វើតេស្តម្តងទៀតដោយឆ្លើយតាមចំណាប់អារម្មណ៍ពិតរបស់អ្នក ដើម្បីឱ្យប្រព័ន្ធអាចណែនាំបានច្បាស់ជាងមុន។"
+            )
+
+        return (
+            "ចម្លើយរបស់អ្នកនៅមិនទាន់បង្ហាញទិសដៅច្បាស់ទៅកាន់មុខជំនាញណាមួយនៅឡើយ។ "
+            "សូមឆ្លើយបន្ថែម ឬធ្វើតេស្តម្តងទៀត ដើម្បីឱ្យប្រព័ន្ធអាចណែនាំបានច្បាស់ជាងមុន។"
+        )
+
+    recommendations = result.get('university_recommendations', [])
+    if not recommendations:
+        return (
+            "បច្ចុប្បន្នមិនទាន់មានមុខជំនាញដែលផ្គូផ្គងនឹងទិន្នន័យបណ្ដុះបណ្ដាល "
+            "និងមាននៅសាកលវិទ្យាល័យអង្គរដែលអាចបង្ហាញបានទេ។"
+        )
+
+    top_result = recommendations[0]
+    explanation = (
+        f"ផ្អែកលើចម្លើយរបស់អ្នក ក្រុមជំនាញដែលសមស្របជាងគេគឺ "
+        f"**{top_result['generic_major']}** "
+        f"({top_result['confidence'] * 100:.0f}%)។ "
+        "ខាងក្រោមនេះគឺជាមុខជំនាញដែលមានបង្រៀននៅសាកលវិទ្យាល័យអង្គរ "
+        "និងអាជីពដែលពាក់ព័ន្ធ ដើម្បីឱ្យអ្នកពិចារណាបន្ត។"
+    )
+
+    if len(recommendations) > 1:
+        alternatives = ", ".join(
+            f"{item['generic_major']} ({item['confidence'] * 100:.0f}%)"
+            for item in recommendations[1:3]
+        )
+        explanation += f" ជម្រើសបន្ថែមដែលគួរពិចារណា៖ {alternatives}។"
+
+    return explanation
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class TrainingStatusView(View):

@@ -11,6 +11,20 @@ import MessageList from './MessageList';
 import ChatInput from './ChatInput';
 import ProfileEditModal from '../Profile/ProfileEditModal';
 
+const CHAT_LOG_CHEAT_CODE = 'copyallchat';
+const CHEAT_CODE_TIMEOUT_MS = 1500;
+
+const mapStoredMessageToUiMessage = (message) => {
+  const metadata = message.metadata || {};
+  return {
+    id: message.id,
+    content: message.content || '',
+    custom: metadata.custom || null,
+    buttons: metadata.buttons || null,
+    type: message.message_type === 'user' ? 'user' : 'bot',
+    timestamp: message.timestamp ? new Date(message.timestamp) : new Date(),
+  };
+};
 
 const ChatInterface = () => {
   const { t, i18n } = useTranslation();
@@ -30,12 +44,8 @@ const ChatInterface = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
-  const [copyStatus, setCopyStatus] = useState('idle');
-
-  useEffect(() => {
-    // Always start with a fresh session
-    startNewChat(true);
-  }, []);
+  const cheatBufferRef = useRef('');
+  const cheatLastKeyTimeRef = useRef(0);
 
   useEffect(() => {
     document.documentElement.lang = i18n.language;
@@ -44,31 +54,6 @@ const ChatInterface = () => {
   useEffect(() => {
     localStorage.setItem('isSidebarOpen', isSidebarOpen);
   }, [isSidebarOpen]);
-
-  // Add beforeunload event listener to warn about losing progress
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (messages.length > 0) {
-        const message = 'You have an active chat session. If you leave or refresh, you will lose your progress. Are you sure?';
-        e.preventDefault();
-        e.returnValue = message;
-        return message;
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [messages]);
-
-  const startNewChat = () => {
-    const newSessionId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    setSessionId(newSessionId);
-    setMessages([]);
-    return newSessionId;
-  };
 
   const handleSendMessage = async (overrideMessage = null) => {
     // If it's a click event (not an override string), use inputMessage
@@ -93,25 +78,20 @@ const ChatInterface = () => {
     setLoading(true);
 
     try {
-      // Always use the per-chat session id so a fresh chat never reuses an old Rasa tracker.
-      const activeUserId = sessionId || startNewChat();
+      const activeSessionId = sessionId;
+      const response = await chatService.sendMessage(textToSend, activeSessionId);
 
-      const botResponses = await chatService.sendMessage(textToSend, activeUserId);
+      if (response?.session_id) {
+        setSessionId(response.session_id);
+      }
 
-      // Rasa returns an array of response objects [ { recipient_id: "user_id", text: "..." }, ... ]
-      if (Array.isArray(botResponses)) {
+      const botResponses = Array.isArray(response?.bot_responses) ? response.bot_responses : [];
+      if (botResponses.length > 0) {
         botResponses.forEach((botResponse, index) => {
           setTimeout(() => {
-            const botMessage = {
-              id: Date.now() + index + 1,
-              content: botResponse.text || '',
-              custom: botResponse.custom || null,
-              buttons: botResponse.buttons || null, // Capture payload buttons
-              type: 'bot',
-              timestamp: new Date(),
-            };
+            const botMessage = mapStoredMessageToUiMessage(botResponse);
             setMessages(prev => [...prev, botMessage]);
-          }, index * 500);
+          }, index * 120);
         });
       }
 
@@ -180,18 +160,73 @@ const ChatInterface = () => {
   };
 
   const handleCopyChatLog = async () => {
-    if (messages.length === 0) return;
+    if (messages.length === 0) return false;
 
     try {
       await copyTextToClipboard(buildDebugTranscript());
-      setCopyStatus('copied');
-      window.setTimeout(() => setCopyStatus('idle'), 2000);
+      return true;
     } catch (error) {
       console.error('Failed to copy chat log:', error);
-      setCopyStatus('error');
-      window.setTimeout(() => setCopyStatus('idle'), 2000);
+      return false;
     }
   };
+
+  useEffect(() => {
+    const handleCheatCodeKeydown = (event) => {
+      if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) {
+        return;
+      }
+
+      const target = event.target;
+      const tagName = target?.tagName?.toLowerCase();
+      const isEditable =
+        target?.isContentEditable ||
+        tagName === 'input' ||
+        tagName === 'textarea' ||
+        tagName === 'select';
+
+      if (isEditable) {
+        cheatBufferRef.current = '';
+        return;
+      }
+
+      if (!/^[a-z]$/i.test(event.key)) {
+        cheatBufferRef.current = '';
+        return;
+      }
+
+      const now = Date.now();
+      const withinWindow = now - cheatLastKeyTimeRef.current <= CHEAT_CODE_TIMEOUT_MS;
+      const key = event.key.toLowerCase();
+      const seededBuffer = withinWindow ? cheatBufferRef.current : '';
+      const candidate = `${seededBuffer}${key}`.slice(-CHAT_LOG_CHEAT_CODE.length);
+
+      if (CHAT_LOG_CHEAT_CODE.startsWith(candidate)) {
+        cheatBufferRef.current = candidate;
+      } else if (CHAT_LOG_CHEAT_CODE.startsWith(key)) {
+        cheatBufferRef.current = key;
+      } else {
+        cheatBufferRef.current = '';
+      }
+
+      cheatLastKeyTimeRef.current = now;
+
+      if (cheatBufferRef.current === CHAT_LOG_CHEAT_CODE) {
+        cheatBufferRef.current = '';
+        cheatLastKeyTimeRef.current = 0;
+        handleCopyChatLog().then((copied) => {
+          if (copied) {
+            console.info('RiaBot chat log copied to clipboard.');
+          } else {
+            console.warn('No chat log was copied.');
+          }
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleCheatCodeKeydown);
+    return () => window.removeEventListener('keydown', handleCheatCodeKeydown);
+  }, [messages, sessionId]);
 
 
   const handleProfileUpdate = async (formData) => {
@@ -221,12 +256,7 @@ const ChatInterface = () => {
 
       <div className="main-chat">
         <ChatHeader
-          isSidebarOpen={isSidebarOpen}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-          onStartNewChat={startNewChat}
-          onCopyChatLog={handleCopyChatLog}
-          canCopyChatLog={messages.length > 0}
-          copyStatus={copyStatus}
         />
 
         <MessageList

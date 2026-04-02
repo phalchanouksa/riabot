@@ -19,15 +19,28 @@ class AdaptiveRecommender:
     
     # Configuration
     MAX_QUESTIONS = 256  # Maximum questions (full survey)
-    MIN_QUESTIONS_BEFORE_STOP = 24  # Build a reliable profile before early stopping
-    HARD_STOP_QUESTIONS = 48  # Avoid dragging the survey on too long
-    CONFIDENCE_THRESHOLD = 0.85  # Stop if confidence exceeds this
-    HIGH_CONFIDENCE_THRESHOLD = 0.92
-    VERY_HIGH_CONFIDENCE_THRESHOLD = 0.97
+    MIN_QUESTIONS_BEFORE_STOP = 12  # Grade 12 guidance should converge earlier
+    DEFAULT_TARGET_STOP_QUESTIONS = 24  # Typical adaptive finish point
+    LOW_INTEREST_STOP_QUESTIONS = 20  # Flat low-interest profiles should not drag on
+    HARD_STOP_QUESTIONS = 28  # Absolute cap so the survey never feels endless
+    CONFIDENCE_THRESHOLD = 0.75  # Stop if confidence exceeds this
+    HIGH_CONFIDENCE_THRESHOLD = 0.85
+    VERY_HIGH_CONFIDENCE_THRESHOLD = 0.92
     UNCERTAINTY_THRESHOLD = 0.15  # Stop if uncertainty below this (after some questions)
     LOW_UNCERTAINTY_THRESHOLD = 0.12
+    MIN_CONFIDENCE_FOR_FINAL = 0.55
+    MIN_MARGIN_FOR_FINAL = 0.08
+    MIN_SIGNAL_FOR_FINAL = 0.14
+    MIN_PROFILE_CLARITY_FOR_STOP = 0.56
+    UNCLEAR_PROFILE_CLARITY_THRESHOLD = 0.48
+    MIN_PREFERENCE_STRENGTH_FOR_FINAL = 0.20
+    MIN_PREFERENCE_MARGIN_FOR_FINAL = 0.08
     DEFAULT_INTEREST_VALUE = 2.5
     DEFAULT_SKILL_VALUE = 1.5
+    INTEREST_SIGNAL_WEIGHT = 0.75
+    SKILL_SIGNAL_WEIGHT = 0.25
+    SKILL_MODEL_INFLUENCE = 0.25
+    TARGET_SKILL_RATIO = 0.25
     
     # Question importance weights (will be computed from model)
     # Higher weight = more important question
@@ -45,22 +58,24 @@ class AdaptiveRecommender:
         
         # Initialize all questions with base weight
         weights = np.ones(256) * 0.5
+        weights[:96] *= 1.8
+        weights[96:] *= 0.55
         
         # Boost importance of skill questions (ch2) over interest questions (ch1)
         # ch1: indices 0-95 (16 categories × 6 questions)
         # ch2: indices 96-255 (16 categories × 10 questions)
-        weights[96:] *= 1.5  # Skills are more predictive
+        weights[96:] *= 1.0
         
         # Boost specific high-impact questions for each major
         # These are typically the first few questions in each category
         for category_idx in range(16):
             # First 2 interest questions per category (most defining)
             ch1_start = category_idx * 6
-            weights[ch1_start:ch1_start + 2] *= 1.8
+            weights[ch1_start:ch1_start + 3] *= 2.2
             
             # First 3 skill questions per category (most practical)
             ch2_start = 96 + (category_idx * 10)
-            weights[ch2_start:ch2_start + 3] *= 2.0
+            weights[ch2_start:ch2_start + 2] *= 1.1
         
         cls.QUESTION_IMPORTANCE = weights
     
@@ -94,8 +109,18 @@ class AdaptiveRecommender:
         if not unanswered:
             return []
         
+        answered_indices = [int(idx) for idx in answered_indices]
+
         # Base priority from importance weights
         priorities = cls.QUESTION_IMPORTANCE[unanswered].copy()
+        rng = np.random.default_rng()
+        focus_categories = set(cls._get_focus_categories(allowed_categories))
+        interest_covered, skill_covered = cls._get_dimension_coverage(answered_indices)
+        interest_count, skill_count = cls._get_dimension_counts(answered_indices)
+        interest_counts_by_category, skill_counts_by_category = cls._get_category_dimension_counts(answered_indices)
+        fully_covered = interest_covered & skill_covered
+        current_skill_ratio = skill_count / max(1, interest_count + skill_count)
+        recent_categories = cls._get_recent_categories(answered_indices, limit=4)
         
         # If we have current probabilities, boost questions for the most likely majors.
         if current_probabilities is not None:
@@ -109,17 +134,14 @@ class AdaptiveRecommender:
                 ch1_start = major_id * 6
                 ch1_end = ch1_start + 6
                 ch1_mask = (np.array(unanswered) >= ch1_start) & (np.array(unanswered) < ch1_end)
-                priorities[ch1_mask] *= 1.5
+                priorities[ch1_mask] *= 2.0
 
                 ch2_start = 96 + (major_id * 10)
                 ch2_end = ch2_start + 10
                 ch2_mask = (np.array(unanswered) >= ch2_start) & (np.array(unanswered) < ch2_end)
-                priorities[ch2_mask] *= 2.0
+                priorities[ch2_mask] *= 1.05
 
         # Keep broad category coverage early so the survey does not lock in too soon.
-        focus_categories = set(cls._get_focus_categories(allowed_categories))
-        interest_covered, skill_covered = cls._get_dimension_coverage(answered_indices)
-        fully_covered = interest_covered & skill_covered
         answer_signals = cls._get_category_answer_signals(answers or {})
         top_signal_categories = [
             category for category, score in sorted(
@@ -147,17 +169,38 @@ class AdaptiveRecommender:
 
             if category not in fully_covered:
                 if is_interest and category not in interest_covered:
-                    priorities[pos] *= 2.6
+                    priorities[pos] *= 3.2
                 elif not is_interest and category not in skill_covered:
-                    priorities[pos] *= 2.2
+                    priorities[pos] *= 1.1
                 elif category not in interest_covered or category not in skill_covered:
-                    priorities[pos] *= 1.3
+                    priorities[pos] *= 1.15
 
             if category in top_signal_categories:
-                priorities[pos] *= 1.7
+                priorities[pos] *= 1.4 if is_interest else 1.05
                 if not is_interest and category in interest_covered and category not in skill_covered:
-                    priorities[pos] *= 1.4
+                    priorities[pos] *= 1.1
+
+            if is_interest:
+                priorities[pos] *= 1.4
+                if interest_counts_by_category.get(category, 0) == 0:
+                    priorities[pos] *= 1.5
+                if category in recent_categories:
+                    priorities[pos] *= 0.85
+            else:
+                priorities[pos] *= 0.45
+                if interest_count < min(len(focus_categories), 10):
+                    priorities[pos] *= 0.20
+                if current_skill_ratio >= cls.TARGET_SKILL_RATIO:
+                    priorities[pos] *= 0.25
+                if skill_counts_by_category.get(category, 0) >= 1:
+                    priorities[pos] *= 0.35
+                if category in recent_categories:
+                    priorities[pos] *= 0.55
         
+        # Add a small amount of jitter so sessions do not feel identical while
+        # still respecting the learned priority structure.
+        priorities = priorities * (1.0 + rng.uniform(0.0, 0.08, size=len(priorities)))
+
         # Sort by priority (descending)
         sorted_indices = [unanswered[i] for i in np.argsort(priorities)[::-1]]
         
@@ -193,7 +236,12 @@ class AdaptiveRecommender:
         ])
         for idx, value in answers.items():
             if 0 <= idx < 256:
-                features[idx] = value
+                if idx < 96:
+                    features[idx] = float(value)
+                else:
+                    features[idx] = cls.DEFAULT_SKILL_VALUE + (
+                        (float(value) - cls.DEFAULT_SKILL_VALUE) * cls.SKILL_MODEL_INFLUENCE
+                    )
         
         # Get prediction with probabilities
         model = MajorRecommender.get_model()
@@ -215,6 +263,11 @@ class AdaptiveRecommender:
                 answers,
             )
             
+            preference_scores = cls._get_category_preference_scores(answers)
+            top_preference_major_original, top_preference_strength, top_preference_margin = (
+                cls._get_top_preference_summary(preference_scores)
+            )
+
             # Get top prediction
             major_id = np.argmax(probabilities)
             confidence = probabilities[major_id]
@@ -245,7 +298,7 @@ class AdaptiveRecommender:
                 
                 # Get the top 5 most important features that influenced this decision
                 # Only consider features the user actually answered (>0)
-                valid_indices = [i for i in range(256) if features[i] > 0]
+                valid_indices = [int(i) for i in answers.keys()]
                 if valid_indices:
                     # Sort valid indices by their importance
                     valid_indices.sort(key=lambda idx: feature_importances[idx], reverse=True)
@@ -274,7 +327,7 @@ class AdaptiveRecommender:
                             "category": cat_name,
                             "question_text": q_info.get("text", ""),
                             "importance_score": importance,
-                            "user_value": int(features[idx])
+                            "user_value": int(answers.get(idx, features[idx]))
                         })
             except Exception as e:
                 print(f"XAI Error: {e}")
@@ -282,21 +335,65 @@ class AdaptiveRecommender:
             
             # Determine if we should continue asking questions
             questions_asked = len(answers)
+            top_margin = float(probabilities[top_3_indices[0]] - probabilities[top_3_indices[1]]) if len(top_3_indices) > 1 else float(confidence)
+            answer_signals = cls._get_category_answer_signals(answers)
+            top_major_original = MajorRecommender.get_original_major_id(int(major_id))
+            top_signal_strength = float(answer_signals.get(top_major_original, 0.0))
+            low_interest_profile = cls._is_low_interest_profile(answers)
+            profile_clarity = cls._calculate_profile_clarity(
+                confidence=float(confidence),
+                top_margin=top_margin,
+                top_signal_strength=top_signal_strength,
+                top_preference_strength=top_preference_strength,
+                top_preference_margin=top_preference_margin,
+                answers=answers,
+                top_major_original=top_major_original,
+            )
+            target_stop_questions = cls._get_target_stop_questions(
+                confidence=float(confidence),
+                uncertainty=float(uncertainty),
+                top_signal_strength=top_signal_strength,
+                top_preference_strength=top_preference_strength,
+                top_preference_margin=top_preference_margin,
+                profile_clarity=profile_clarity,
+                low_interest_profile=bool(low_interest_profile),
+            )
             should_continue = cls._should_continue_asking(
                 questions_asked,
                 confidence,
                 uncertainty,
                 list(answers.keys()),
+                profile_clarity=profile_clarity,
                 allowed_categories=allowed_categories,
+                target_stop_questions=target_stop_questions,
             )
 
-            top_major_original = MajorRecommender.get_original_major_id(int(major_id))
             if should_continue and cls._has_signal_consensus_stop(
                 answers,
                 top_major_original,
                 float(confidence),
+                top_margin,
+                top_signal_strength,
+                top_preference_major_original,
+                top_preference_strength,
+                top_preference_margin,
+                profile_clarity,
             ):
                 should_continue = False
+
+            is_unclear_profile = cls._is_unclear_profile(
+                questions_asked=questions_asked,
+                confidence=float(confidence),
+                top_margin=top_margin,
+                top_signal_strength=top_signal_strength,
+                top_preference_strength=top_preference_strength,
+                top_preference_margin=top_preference_margin,
+                profile_clarity=profile_clarity,
+            )
+
+            # If the profile is still weak, keep asking until its dynamic stop target.
+            if should_continue is False and is_unclear_profile and questions_asked < target_stop_questions:
+                should_continue = True
             
             # Get next questions to ask if continuing
             next_questions = []
@@ -312,12 +409,30 @@ class AdaptiveRecommender:
                 'major': MajorRecommender.get_major_name(major_id),
                 'major_id': int(major_id),
                 'confidence': float(confidence),
+                'top_margin': top_margin,
+                'top_signal_strength': top_signal_strength,
+                'top_preference_major_id': int(top_preference_major_original) if top_preference_major_original is not None else None,
+                'top_preference_strength': float(top_preference_strength),
+                'top_preference_margin': float(top_preference_margin),
+                'profile_clarity': profile_clarity,
+                'target_stop_questions': int(target_stop_questions),
+                'low_interest_profile': bool(low_interest_profile),
+                'preference_scores': {
+                    int(category): float(score)
+                    for category, score in preference_scores.items()
+                },
+                'answer_signals': {
+                    int(category): float(score)
+                    for category, score in answer_signals.items()
+                },
                 'uncertainty': float(uncertainty),
                 'top_3': top_3,
                 'questions_asked': questions_asked,
                 'should_continue': should_continue,
+                'is_unclear_profile': bool(is_unclear_profile),
+                'final_state': 'unclear' if (not should_continue and is_unclear_profile) else ('recommendation' if not should_continue else 'in_progress'),
                 'next_questions': next_questions,
-                'stage': cls._get_current_stage(questions_asked, confidence),
+                'stage': cls._get_current_stage(questions_asked, confidence, profile_clarity),
                 'probabilities': probabilities.tolist(),
                 'xai_explanations': xai_explanations
             }
@@ -332,13 +447,22 @@ class AdaptiveRecommender:
     def _should_continue_asking(cls, questions_asked: int, 
                                confidence: float, uncertainty: float,
                                answered_indices: list = None,
-                               allowed_categories: Optional[List[int]] = None) -> bool:
+                               profile_clarity: float = 0.0,
+                               allowed_categories: Optional[List[int]] = None,
+                               target_stop_questions: Optional[int] = None) -> bool:
         """
         Determine if we should continue asking questions.
         """
         # Stop if reached maximum
         if questions_asked >= cls.MAX_QUESTIONS:
             return False
+
+        # Absolute hard stop must win over every other rule.
+        if questions_asked >= cls.HARD_STOP_QUESTIONS:
+            return False
+
+        if target_stop_questions is None:
+            target_stop_questions = cls.DEFAULT_TARGET_STOP_QUESTIONS
             
         # Build broad evidence before trusting the model enough to stop.
         if questions_asked < cls.MIN_QUESTIONS_BEFORE_STOP:
@@ -352,9 +476,9 @@ class AdaptiveRecommender:
         focus_interest_coverage = len(interest_covered & focus_categories)
         focus_skill_coverage = len(skill_covered & focus_categories)
 
-        min_category_coverage = min(len(focus_categories), 12)
+        min_category_coverage = min(len(focus_categories), 10)
         min_interest_coverage = min(len(focus_categories), 10)
-        min_skill_coverage = min(len(focus_categories), 6)
+        min_skill_coverage = 0
 
         if focus_category_coverage < min_category_coverage:
             return True
@@ -365,27 +489,87 @@ class AdaptiveRecommender:
         if focus_skill_coverage < min_skill_coverage:
             return True
 
-        # Allow an earlier stop only when the signal is overwhelming.
-        if questions_asked >= 28 and confidence >= cls.VERY_HIGH_CONFIDENCE_THRESHOLD:
-            return False
-
-        if (
-            questions_asked >= 32 and
-            confidence >= cls.HIGH_CONFIDENCE_THRESHOLD and
-            uncertainty <= cls.LOW_UNCERTAINTY_THRESHOLD
+        # Adaptive finish point: not every session should stop at the same question.
+        if questions_asked >= target_stop_questions and (
+            profile_clarity >= cls.UNCLEAR_PROFILE_CLARITY_THRESHOLD or
+            questions_asked >= cls.HARD_STOP_QUESTIONS
         ):
-            return False
-
-        if questions_asked >= 40 and (
-            confidence >= cls.CONFIDENCE_THRESHOLD or
-            uncertainty <= cls.UNCERTAINTY_THRESHOLD
-        ):
-            return False
-
-        if questions_asked >= cls.HARD_STOP_QUESTIONS:
             return False
 
         return True
+
+    @classmethod
+    def _get_target_stop_questions(
+        cls,
+        confidence: float,
+        uncertainty: float,
+        top_signal_strength: float,
+        top_preference_strength: float,
+        top_preference_margin: float,
+        profile_clarity: float,
+        low_interest_profile: bool,
+    ) -> int:
+        """
+        Compute a variable finish target so the survey does not feel like it
+        always ends at the exact same question count.
+        """
+        if low_interest_profile:
+            return min(cls.LOW_INTEREST_STOP_QUESTIONS, cls.HARD_STOP_QUESTIONS)
+
+        if (
+            top_preference_strength >= 0.32 and
+            top_preference_margin >= 0.14 and
+            profile_clarity >= 0.66
+        ):
+            return 16
+
+        if (
+            top_preference_strength >= 0.26 and
+            top_preference_margin >= 0.10 and
+            profile_clarity >= 0.60
+        ):
+            return 18
+
+        if (
+            top_preference_strength >= cls.MIN_PREFERENCE_STRENGTH_FOR_FINAL and
+            top_preference_margin >= cls.MIN_PREFERENCE_MARGIN_FOR_FINAL and
+            profile_clarity >= cls.MIN_PROFILE_CLARITY_FOR_STOP
+        ):
+            return 20
+
+        if (
+            confidence >= cls.VERY_HIGH_CONFIDENCE_THRESHOLD and
+            profile_clarity >= 0.70
+        ):
+            return 16
+
+        if (
+            confidence >= cls.HIGH_CONFIDENCE_THRESHOLD and
+            uncertainty <= cls.LOW_UNCERTAINTY_THRESHOLD and
+            profile_clarity >= 0.64
+        ):
+            return 18
+
+        if (
+            profile_clarity >= 0.60 and
+            (confidence >= 0.72 or top_signal_strength >= 0.22 or top_preference_strength >= 0.18)
+        ):
+            return 20
+
+        if (
+            profile_clarity >= cls.MIN_PROFILE_CLARITY_FOR_STOP and
+            (confidence >= 0.62 or top_signal_strength >= 0.16 or top_preference_strength >= 0.14)
+        ):
+            return 22
+
+        if (
+            profile_clarity >= 0.50 or
+            confidence >= cls.MIN_CONFIDENCE_FOR_FINAL or
+            top_signal_strength >= 0.12
+        ):
+            return cls.DEFAULT_TARGET_STOP_QUESTIONS
+
+        return cls.HARD_STOP_QUESTIONS
     
     @classmethod
     def _get_categories_covered(cls, answered_indices: list) -> set:
@@ -425,36 +609,116 @@ class AdaptiveRecommender:
         return interest_categories, skill_categories
 
     @classmethod
+    def _get_dimension_counts(cls, answered_indices: list) -> Tuple[int, int]:
+        """Return how many interest and skill questions have been answered."""
+        interest_count = sum(1 for idx in answered_indices if idx < 96)
+        skill_count = sum(1 for idx in answered_indices if idx >= 96)
+        return interest_count, skill_count
+
+    @classmethod
+    def _get_category_dimension_counts(cls, answered_indices: list) -> Tuple[Dict[int, int], Dict[int, int]]:
+        """Return answered counts per category for interests and skills."""
+        interest_counts: Dict[int, int] = {}
+        skill_counts: Dict[int, int] = {}
+
+        for idx in answered_indices:
+            if idx < 96:
+                category = idx // 6
+                interest_counts[category] = interest_counts.get(category, 0) + 1
+            else:
+                category = (idx - 96) // 10
+                skill_counts[category] = skill_counts.get(category, 0) + 1
+
+        return interest_counts, skill_counts
+
+    @classmethod
+    def _get_recent_categories(cls, answered_indices: list, limit: int = 3) -> List[int]:
+        """Track the most recent categories so follow-ups feel less repetitive."""
+        recent = []
+        for idx in answered_indices[-limit:]:
+            if idx < 96:
+                recent.append(idx // 6)
+            else:
+                recent.append((idx - 96) // 10)
+        return recent
+
+    @classmethod
     def _get_category_answer_signals(cls, answers: Dict[int, int]) -> Dict[int, float]:
         """
         Estimate which categories the student is clearly leaning toward based on
         answered values, independent of the model's current prediction.
         """
-        signals = {}
-        counts = {}
+        preferences = cls._get_category_preference_scores(answers)
+        return {
+            category: max(0.0, score)
+            for category, score in preferences.items()
+        }
+
+    @classmethod
+    def _get_category_preference_scores(cls, answers: Dict[int, int]) -> Dict[int, float]:
+        """
+        Build centered category preference scores in the range of roughly -1..1.
+        Negative values mean dislike / low fit, positive values mean stronger fit.
+        """
+        interest_signals = {}
+        interest_counts = {}
+        skill_signals = {}
+        skill_counts = {}
 
         for idx, value in answers.items():
             if idx < 96:
                 category = idx // 6
-                normalized = max(
-                    0.0,
-                    (float(value) - cls.DEFAULT_INTEREST_VALUE) / (4.0 - cls.DEFAULT_INTEREST_VALUE),
-                )
+                normalized = (float(value) - cls.DEFAULT_INTEREST_VALUE) / (4.0 - cls.DEFAULT_INTEREST_VALUE)
+                interest_signals[category] = interest_signals.get(category, 0.0) + normalized
+                interest_counts[category] = interest_counts.get(category, 0) + 1
             else:
                 category = (idx - 96) // 10
-                normalized = max(
-                    0.0,
-                    (float(value) - cls.DEFAULT_SKILL_VALUE) / (3.0 - cls.DEFAULT_SKILL_VALUE),
+                normalized = (
+                    (float(value) - cls.DEFAULT_SKILL_VALUE) / (3.0 - cls.DEFAULT_SKILL_VALUE)
                 ) if value is not None else 0.0
+                skill_signals[category] = skill_signals.get(category, 0.0) + normalized
+                skill_counts[category] = skill_counts.get(category, 0) + 1
 
-            signals[category] = signals.get(category, 0.0) + normalized
-            counts[category] = counts.get(category, 0) + 1
+        preferences = {}
+        all_categories = set(interest_counts) | set(skill_counts)
+        for category in all_categories:
+            interest_score = (
+                interest_signals.get(category, 0.0) / interest_counts[category]
+                if interest_counts.get(category)
+                else 0.0
+            )
+            skill_score = (
+                skill_signals.get(category, 0.0) / skill_counts[category]
+                if skill_counts.get(category)
+                else 0.0
+            )
+            preferences[category] = (
+                cls.INTEREST_SIGNAL_WEIGHT * interest_score +
+                cls.SKILL_SIGNAL_WEIGHT * skill_score
+            )
 
-        return {
-            category: signals[category] / counts[category]
-            for category in signals
-            if counts[category] > 0
-        }
+        return preferences
+
+    @classmethod
+    def _get_top_preference_summary(
+        cls,
+        preference_scores: Dict[int, float],
+    ) -> Tuple[Optional[int], float, float]:
+        """
+        Return the strongest answer-pattern category plus its strength and lead
+        over the second-best category.
+        """
+        if not preference_scores:
+            return None, 0.0, 0.0
+
+        ranked = sorted(
+            ((int(category), float(score)) for category, score in preference_scores.items()),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+        top_major_original, top_strength = ranked[0]
+        second_strength = ranked[1][1] if len(ranked) > 1 else 0.0
+        return top_major_original, max(0.0, top_strength), max(0.0, top_strength - second_strength)
 
     @classmethod
     def _blend_probabilities_with_answer_signals(
@@ -470,8 +734,8 @@ class AdaptiveRecommender:
         if not answers:
             return model_probabilities
 
-        answer_signals = cls._get_category_answer_signals(answers)
-        if not answer_signals:
+        preference_scores = cls._get_category_preference_scores(answers)
+        if not preference_scores:
             return model_probabilities
 
         question_count = len(answers)
@@ -495,26 +759,30 @@ class AdaptiveRecommender:
             softened_model /= softened_sum
 
         blended = softened_model.copy()
-        signal_vector = np.zeros_like(blended)
+        preference_vector = np.zeros_like(blended, dtype=np.float64)
         coverage_bonus = np.zeros_like(blended)
         interest_covered, skill_covered = cls._get_dimension_coverage(list(answers.keys()))
 
         for class_idx in range(len(blended)):
             original_major_id = MajorRecommender.get_original_major_id(int(class_idx))
-            signal_vector[class_idx] = answer_signals.get(original_major_id, 0.0)
-            if (
-                original_major_id in interest_covered and
-                original_major_id in skill_covered
-            ):
-                coverage_bonus[class_idx] = 0.05
+            preference_vector[class_idx] = preference_scores.get(original_major_id, 0.0)
+            if original_major_id in interest_covered:
+                coverage_bonus[class_idx] += 0.06
+            if original_major_id in skill_covered:
+                coverage_bonus[class_idx] += 0.02
 
-        signal_sum = signal_vector.sum()
-        if signal_sum > 0:
-            signal_vector /= signal_sum
+        preference_logits = preference_vector * 3.0
+        preference_logits -= np.max(preference_logits)
+        preference_probs = np.exp(preference_logits)
+        preference_sum = preference_probs.sum()
+        if preference_sum > 0:
+            preference_probs /= preference_sum
+        else:
+            preference_probs = softened_model.copy()
 
         blended = (
             blended * model_weight +
-            signal_vector * signal_weight +
+            preference_probs * signal_weight +
             coverage_bonus
         )
 
@@ -523,6 +791,21 @@ class AdaptiveRecommender:
             return model_probabilities
 
         return blended / blended_sum
+
+    @classmethod
+    def _is_low_interest_profile(cls, answers: Dict[int, int]) -> bool:
+        """
+        Detect when the student is explicitly showing low interest across
+        most of the asked interest questions.
+        """
+        interest_values = [float(value) for idx, value in answers.items() if idx < 96]
+        if len(interest_values) < 8:
+            return False
+
+        avg_interest = sum(interest_values) / len(interest_values)
+        dislike_ratio = sum(1 for value in interest_values if value <= 1.0) / len(interest_values)
+
+        return avg_interest <= 1.6 and dislike_ratio >= 0.60
 
     @classmethod
     def _get_focus_categories(cls, allowed_categories: Optional[List[int]] = None) -> List[int]:
@@ -538,6 +821,12 @@ class AdaptiveRecommender:
         answers: Dict[int, int],
         top_major_original: int,
         confidence: float,
+        top_margin: float,
+        top_signal_strength: float,
+        top_preference_major_original: Optional[int],
+        top_preference_strength: float,
+        top_preference_margin: float,
+        profile_clarity: float,
     ) -> bool:
         """
         Stop when the partial survey has a clear, human-readable pattern:
@@ -548,11 +837,20 @@ class AdaptiveRecommender:
         if questions_asked < cls.MIN_QUESTIONS_BEFORE_STOP:
             return False
 
-        if confidence < 0.30:
-            return False
-
         answer_signals = cls._get_category_answer_signals(answers)
         if not answer_signals:
+            return False
+
+        if top_margin < cls.MIN_MARGIN_FOR_FINAL and top_preference_margin < cls.MIN_PREFERENCE_MARGIN_FOR_FINAL:
+            return False
+
+        if (
+            top_signal_strength < cls.MIN_SIGNAL_FOR_FINAL and
+            top_preference_strength < cls.MIN_PREFERENCE_STRENGTH_FOR_FINAL
+        ):
+            return False
+
+        if profile_clarity < cls.MIN_PROFILE_CLARITY_FOR_STOP:
             return False
 
         top_signal_categories = [
@@ -564,13 +862,90 @@ class AdaptiveRecommender:
         ]
 
         if top_major_original not in top_signal_categories:
+            if top_preference_major_original != top_major_original:
+                return False
+
+        if (
+            confidence < cls.MIN_CONFIDENCE_FOR_FINAL and
+            top_preference_strength < cls.MIN_PREFERENCE_STRENGTH_FOR_FINAL
+        ):
             return False
 
         interest_covered, skill_covered = cls._get_dimension_coverage(list(answers.keys()))
-        if top_major_original not in interest_covered or top_major_original not in skill_covered:
+        if top_major_original not in interest_covered:
             return False
 
         return True
+
+    @classmethod
+    def _calculate_profile_clarity(
+        cls,
+        confidence: float,
+        top_margin: float,
+        top_signal_strength: float,
+        top_preference_strength: float,
+        top_preference_margin: float,
+        answers: Dict[int, int],
+        top_major_original: int,
+    ) -> float:
+        """Estimate how decisive the current profile is on a 0-1 scale."""
+        normalized_margin = min(1.0, max(0.0, top_margin) / 0.25)
+        normalized_signal = min(1.0, max(0.0, top_signal_strength) / 0.35)
+        normalized_preference = min(1.0, max(0.0, top_preference_strength) / 0.30)
+        normalized_preference_margin = min(1.0, max(0.0, top_preference_margin) / 0.14)
+
+        interest_covered, skill_covered = cls._get_dimension_coverage(list(answers.keys()))
+        coverage_score = 0.0
+        if top_major_original in interest_covered:
+            coverage_score += 0.8
+        if top_major_original in skill_covered:
+            coverage_score += 0.2
+
+        clarity = (
+            0.18 * float(confidence) +
+            0.12 * normalized_margin +
+            0.20 * normalized_signal +
+            0.24 * normalized_preference +
+            0.16 * normalized_preference_margin +
+            0.10 * coverage_score
+        )
+        return float(max(0.0, min(1.0, clarity)))
+
+    @classmethod
+    def _is_unclear_profile(
+        cls,
+        questions_asked: int,
+        confidence: float,
+        top_margin: float,
+        top_signal_strength: float,
+        top_preference_strength: float,
+        top_preference_margin: float,
+        profile_clarity: float,
+    ) -> bool:
+        """
+        Decide whether the current profile is still too weak to present as a
+        final recommendation.
+        """
+        if questions_asked < cls.MIN_QUESTIONS_BEFORE_STOP:
+            return False
+
+        if profile_clarity < cls.UNCLEAR_PROFILE_CLARITY_THRESHOLD:
+            return True
+
+        if (
+            confidence < cls.MIN_CONFIDENCE_FOR_FINAL and
+            top_preference_strength < cls.MIN_PREFERENCE_STRENGTH_FOR_FINAL
+        ):
+            return True
+
+        if (
+            top_margin < cls.MIN_MARGIN_FOR_FINAL and
+            top_signal_strength < cls.MIN_SIGNAL_FOR_FINAL and
+            top_preference_margin < cls.MIN_PREFERENCE_MARGIN_FOR_FINAL
+        ):
+            return True
+
+        return False
 
     @staticmethod
     def _interleave_categories(categories: List[int]) -> List[int]:
@@ -590,21 +965,34 @@ class AdaptiveRecommender:
             if i < len(right):
                 result.append(right[i])
         return result
+
+    @staticmethod
+    def _shuffle_in_priority_bands(items: List[int], rng: np.random.Generator, band_size: int = 4) -> List[int]:
+        """
+        Add controlled randomness without destroying the overall priority order.
+        Nearby items are assumed to have similar priority, so we only shuffle
+        within small contiguous bands.
+        """
+        shuffled = []
+        for start in range(0, len(items), band_size):
+            band = list(items[start:start + band_size])
+            rng.shuffle(band)
+            shuffled.extend(band)
+        return shuffled
     
     @classmethod
-    def _get_current_stage(cls, questions_asked: int, confidence: float = 0.0) -> str:
+    def _get_current_stage(cls, questions_asked: int, confidence: float = 0.0, profile_clarity: float = 0.0) -> str:
         """
-        Determine current stage based on confidence level, not question count.
-        More intelligent and adaptive!
+        Determine current stage from both quantity and clarity, not only the
+        raw model confidence.
         """
         if questions_asked < 8:
             return "profiling"
-        if confidence >= 0.80 and questions_asked >= 16:
-            return "refining"  # High confidence, just fine-tuning
-        elif confidence >= 0.55 and questions_asked >= 10:
-            return "narrowing"  # Medium confidence, narrowing down options
-        else:
-            return "profiling"  # Low confidence, still exploring
+        if questions_asked >= 16 and (profile_clarity >= 0.60 or confidence >= 0.70):
+            return "refining"
+        if questions_asked >= 10 and (profile_clarity >= 0.42 or confidence >= 0.35):
+            return "narrowing"
+        return "profiling"
     
     @classmethod
     def get_explanation(cls, result: Dict, answers: Dict[int, int]) -> str:
@@ -686,24 +1074,41 @@ class AdaptiveRecommender:
         cls.initialize_importance_weights()
         
         category_order = cls._get_focus_categories(allowed_categories)
+        rng = np.random.default_rng()
+        category_order = cls._shuffle_in_priority_bands(category_order, rng, band_size=3)
         result = []
         seen = set()
 
         # Phase 1: one interest question from every category for broad profiling.
         for category in category_order:
-            idx = category * 6
+            interest_candidates = list(range(category * 6, category * 6 + 6))
+            idx = int(rng.choice(interest_candidates))
             result.append(idx)
             seen.add(idx)
 
-        # Phase 2: one skill question from every category to balance the signal.
-        for category in category_order:
-            idx = 96 + category * 10
-            result.append(idx)
-            seen.add(idx)
-
-        # Phase 3: remaining questions follow adaptive priority heuristics.
+        # Phase 2: finish the interest chapter first, then use skills as
+        # selective tie-breakers later in the queue.
         remaining = cls.get_question_priority(result, allowed_categories=allowed_categories)
-        for idx in remaining:
+        remaining_interest = [idx for idx in remaining if idx < 96]
+        remaining_skill = [idx for idx in remaining if idx >= 96]
+        remaining_interest = cls._shuffle_in_priority_bands(remaining_interest, rng, band_size=5)
+        remaining_skill = cls._shuffle_in_priority_bands(remaining_skill, rng, band_size=4)
+
+        for idx in remaining_interest:
+            if idx not in seen:
+                result.append(idx)
+                seen.add(idx)
+
+        # Phase 3: add a small skill sample per category later in the queue.
+        for category in category_order:
+            skill_start = 96 + category * 10
+            skill_candidates = list(range(skill_start, skill_start + min(2, 10)))
+            idx = int(rng.choice(skill_candidates))
+            if idx not in seen:
+                result.append(idx)
+                seen.add(idx)
+
+        for idx in remaining_skill:
             if idx not in seen:
                 result.append(idx)
                 seen.add(idx)

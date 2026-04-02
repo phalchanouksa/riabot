@@ -19,6 +19,8 @@ from rasa_sdk.executor import CollectingDispatcher
 logger = logging.getLogger(__name__)
 
 DJANGO_API_URL = os.environ.get("DJANGO_API_URL", "http://localhost:8000/api")
+DJANGO_INTERNAL_TOKEN = os.environ.get("DJANGO_INTERNAL_TOKEN", "rasa-secret")
+HTTP_SESSION = requests.Session()
 
 
 def call_django_api(endpoint: str, method: str = "GET", data: dict = None) -> Optional[dict]:
@@ -26,9 +28,9 @@ def call_django_api(endpoint: str, method: str = "GET", data: dict = None) -> Op
     url = f"{DJANGO_API_URL}/ml/{endpoint}"
     try:
         if method == "GET":
-            response = requests.get(url, timeout=30)
+            response = HTTP_SESSION.get(url, timeout=30)
         else:
-            response = requests.post(url, json=data, timeout=30)
+            response = HTTP_SESSION.post(url, json=data, timeout=30)
 
         if response.status_code == 200:
             return response.json()
@@ -59,6 +61,44 @@ def get_adaptive_explanation(answers: dict) -> Optional[dict]:
     return call_django_api("adaptive/explain/", method="POST", data={"answers": answers})
 
 
+def get_university_major_mappings() -> Dict[str, List[dict]]:
+    result = call_django_api("mappings/?format=ui")
+    if not result:
+        return {}
+    return result.get("mappings", {}) or {}
+
+
+def save_survey_result(
+    session_id: str,
+    result: dict,
+    explanation: str,
+    answers: Optional[dict] = None,
+) -> bool:
+    """Persist a completed survey result in Django."""
+    url = f"{DJANGO_API_URL}/chat/survey-results/internal/"
+    try:
+        response = HTTP_SESSION.post(
+            url,
+            json={
+                "session_id": session_id,
+                "result": result,
+                "explanation": explanation,
+                "answers": answers or {},
+                "internal_token": DJANGO_INTERNAL_TOKEN,
+            },
+            headers={"X-RiaBot-Internal-Token": DJANGO_INTERNAL_TOKEN},
+            timeout=30,
+        )
+        if response.status_code == 200:
+            return True
+
+        logger.error("Survey result save failed %s: %s", response.status_code, response.text)
+        return False
+    except Exception as exc:
+        logger.error("Survey result save request failed: %s", exc)
+        return False
+
+
 def get_question_scale(question_idx: int) -> tuple[str, List[Dict[str, str]]]:
     """Return the display scale and quick-reply buttons for a question."""
     if question_idx < 96:
@@ -87,9 +127,174 @@ def build_results_summary(university_recommendations: List[dict]) -> str:
     lines = []
     for idx, rec in enumerate(university_recommendations[:3], start=1):
         rank_major = rec.get("generic_major", "Unknown")
-        confidence = rec.get("confidence", 0) * 100
-        lines.append(f"{idx}. **{rank_major}** - {confidence:.0f}%")
+        lines.append(f"{idx}. **{rank_major}**")
     return "\n" + "\n".join(lines) if lines else ""
+
+
+def build_final_recommendation_explanation(result: Optional[dict], prefix: str = "") -> str:
+    recommendations = []
+    if result:
+        recommendations = result.get("university_recommendations", []) or []
+
+    if not recommendations:
+        return (result or {}).get("explanation", "")
+
+    top_major = recommendations[0].get("generic_major", "Unknown")
+    message_parts = [
+        f"{prefix}ផ្អែកលើចម្លើយរបស់អ្នក ទិសដៅដែលសមស្របជាងគេគឺ **{top_major}**។"
+    ]
+
+    if len(recommendations) > 1:
+        alternatives = ", ".join(
+            f"**{item.get('generic_major', 'Unknown')}**"
+            for item in recommendations[1:3]
+        )
+        message_parts.append(f"ជម្រើសបន្ថែមដែលគួរពិចារណាមាន៖ {alternatives}។")
+
+    message_parts.append(
+        "ខាងក្រោមនេះគឺជាមុខជំនាញនៅសាកលវិទ្យាល័យអង្គរដែលអ្នកអាចពិចារណាបន្ត។"
+    )
+
+    return " ".join(message_parts)
+
+
+def is_unclear_profile_result(result: Optional[dict]) -> bool:
+    return bool(result and result.get("final_state") == "unclear")
+
+
+def has_exploration_recommendations(result: Optional[dict]) -> bool:
+    return bool(result and result.get("soft_university_recommendations"))
+
+
+def build_unclear_profile_message(prefix: str = "") -> str:
+    message = (
+        "លទ្ធផលបច្ចុប្បន្ននៅមិនទាន់ច្បាស់គ្រប់គ្រាន់ទេ។ "
+        "ចម្លើយរបស់អ្នកមិនទាន់បង្ហាញទិសដៅច្បាស់ទៅកាន់មុខជំនាញណាមួយនៅឡើយ។ "
+        "សូមឆ្លើយបន្ថែម ឬធ្វើតេស្តម្តងទៀតដោយផ្អែកលើចំណាប់អារម្មណ៍ និងជំនាញពិតរបស់អ្នក។"
+    )
+    return f"{prefix}{message}".strip()
+
+
+def build_unclear_profile_message(prefix: str = "", result: Optional[dict] = None) -> str:
+    if result and result.get("low_interest_profile"):
+        message = (
+            "ផ្អែកលើចម្លើយរបស់អ្នក ប្រព័ន្ធរកឃើញថា អ្នកមានចំណាប់អារម្មណ៍ទាបលើមុខជំនាញជាច្រើនដែលបានសួរ។ "
+            "ដូច្នេះលទ្ធផលខាងក្រោមគួរត្រូវបានយកជាទិសដៅសាកស្វែងយល់បឋម មិនមែនជាការសន្និដ្ឋានចុងក្រោយទេ។"
+        )
+    else:
+        message = (
+            "ផ្អែកលើចម្លើយរបស់អ្នក ខាងក្រោមនេះគឺជាទិសដៅដែលអ្នកអាចសាកស្វែងយល់បន្ថែមមុនគេ។"
+        )
+    return f"{prefix}{message}".strip()
+
+
+def build_exploration_summary(university_recommendations: List[dict]) -> str:
+    lines = []
+    for idx, rec in enumerate(university_recommendations[:2], start=1):
+        rank_major = rec.get("generic_major", "Unknown")
+        lines.append(f"{idx}. **{rank_major}**")
+    return "\n" + "\n".join(lines) if lines else ""
+
+
+def build_exploration_explanation(result: Optional[dict], prefix: str = "") -> str:
+    soft_recommendations = []
+    if result:
+        soft_recommendations = result.get("soft_university_recommendations", []) or []
+
+    if not soft_recommendations:
+        return build_unclear_profile_message(prefix=prefix, result=result)
+
+    top_major = soft_recommendations[0].get("generic_major", "Unknown")
+    message_parts = [
+        f"{prefix}ផ្អែកលើចម្លើយរបស់អ្នក ទិសដៅដែលអ្នកអាចសាកស្វែងយល់មុនគេគឺ **{top_major}**។"
+    ]
+
+    if len(soft_recommendations) > 1:
+        alternatives = ", ".join(
+            f"**{item.get('generic_major', 'Unknown')}**"
+            for item in soft_recommendations[1:3]
+        )
+        message_parts.append(f"ទិសដៅបន្ថែមដែលអាចសាកស្វែងយល់មាន៖ {alternatives}។")
+
+    if result and result.get("low_interest_profile"):
+        message_parts.append(
+            "សូមយកវាជាទិសដៅសាកស្វែងយល់ មិនមែនជាការសន្និដ្ឋានចុងក្រោយទេ។"
+        )
+    else:
+        message_parts.append(
+            "សូមយកលទ្ធផលនេះជាទិសដៅសម្រាប់សាកស្វែងយល់បន្ត "
+            "មុនពេលសម្រេចចិត្តចុងក្រោយ។"
+        )
+
+    return " ".join(message_parts)
+
+
+def build_unclear_profile_message(prefix: str = "", result: Optional[dict] = None) -> str:
+    soft_recommendations = []
+    if result:
+        soft_recommendations = result.get("soft_university_recommendations", []) or []
+
+    if result and result.get("low_interest_profile"):
+        message = (
+            "លទ្ធផលបច្ចុប្បន្ននៅមិនទាន់អាចសន្និដ្ឋានជាចុងក្រោយបានទេ។ "
+            "ចម្លើយរបស់អ្នកបង្ហាញថា អ្នកមិនសូវចាប់អារម្មណ៍លើមុខជំនាញភាគច្រើនដែលបានសួរនៅឡើយ។ "
+            "ដូច្នេះប្រព័ន្ធមិនចង់បង្ខំផ្តល់លទ្ធផលដែលអាចមិនត្រឹមត្រូវទេ។ "
+            "សូមធ្វើតេស្តម្តងទៀតដោយឆ្លើយតាមចំណាប់អារម្មណ៍ពិតរបស់អ្នក។"
+        )
+    else:
+        message = (
+            "លទ្ធផលបច្ចុប្បន្ននៅមិនទាន់ច្បាស់គ្រប់គ្រាន់ទេ។ "
+            "ចម្លើយរបស់អ្នកនៅមិនទាន់បង្ហាញទិសដៅច្បាស់ទៅកាន់មុខជំនាញណាមួយនៅឡើយ។ "
+            "សូមឆ្លើយបន្ថែម ឬធ្វើតេស្តម្តងទៀតដោយផ្អែកលើចំណាប់អារម្មណ៍ពិតរបស់អ្នក។"
+        )
+
+    if soft_recommendations:
+        summary = build_exploration_summary(soft_recommendations)
+        if summary:
+            message += (
+                "\n\nទិសដៅដែលអាចសាកស្វែងយល់បន្ថែម៖"
+                f"{summary}"
+            )
+
+    return f"{prefix}{message}".strip()
+
+
+def format_university_majors_message(major_mappings: Dict[str, List[dict]]) -> str:
+    if not major_mappings:
+        return (
+            "សូមអភ័យទោស។ ខ្ញុំមិនអាចទាញយកបញ្ជីមុខជំនាញពីប្រព័ន្ធបាននៅពេលនេះទេ។ "
+            "សូមសាកល្បងម្ដងទៀតបន្តិចក្រោយ ឬទាក់ទងសាកលវិទ្យាល័យអង្គរដោយផ្ទាល់។"
+        )
+
+    major_names: List[str] = []
+    seen = set()
+    for category in sorted(major_mappings):
+        for item in major_mappings.get(category, []):
+            name = item.get("name", "").strip()
+            if name and name not in seen:
+                major_names.append(name)
+                seen.add(name)
+
+    if not major_names:
+        return (
+            "សូមអភ័យទោស។ បច្ចុប្បន្នមិនទាន់មានបញ្ជីមុខជំនាញសម្រាប់បង្ហាញនៅក្នុងប្រព័ន្ធទេ។"
+        )
+
+    lines = [
+        f"សាកលវិទ្យាល័យអង្គរបច្ចុប្បន្នមានមុខជំនាញចំនួន **{len(major_names)}** ដែលបានកំណត់ក្នុងប្រព័ន្ធ៖",
+        "",
+    ]
+
+    for idx, name in enumerate(major_names, start=1):
+        lines.append(f"{idx}. {name}")
+
+    lines.extend(
+        [
+            "",
+            "ប្រសិនបើអ្នកមិនទាន់ប្រាកដថាសមនឹងមុខជំនាញណា អ្នកអាចធ្វើតេស្តណែនាំជំនាញសិក្សាបាន។",
+        ]
+    )
+    return "\n".join(lines)
 
 
 class ActionStartSurvey(Action):
@@ -189,6 +394,43 @@ class ActionAskNextQuestion(Action):
         major = result.get("major")
         confidence = result.get("confidence", 0.0)
         university_recommendations = result.get("university_recommendations", [])
+        soft_recommendations = result.get("soft_university_recommendations", [])
+
+        if is_unclear_profile_result(result):
+            exploration_explanation = build_exploration_explanation(result)
+            saved = save_survey_result(
+                session_id=tracker.sender_id,
+                result=result,
+                explanation=exploration_explanation,
+                answers=answers,
+            )
+            if not saved:
+                logger.warning("Unclear survey result could not be stored for session %s", tracker.sender_id)
+            if has_exploration_recommendations(result):
+                dispatcher.utter_message(
+                    response="utter_survey_results_exploratory",
+                    results_summary=build_exploration_summary(soft_recommendations),
+                    explanation=exploration_explanation,
+                )
+            else:
+                dispatcher.utter_message(text=exploration_explanation)
+            if soft_recommendations:
+                dispatcher.utter_message(
+                    custom={
+                        "type": "university_recommendations",
+                        "title": "ទិសដៅដែលអាចសាកស្វែងយល់បន្ថែម",
+                        "subtitle": "ជាជម្រើសសាកសមបឋមសម្រាប់អ្នកពិចារណាបន្ត",
+                        "show_confidence": False,
+                        "data": soft_recommendations,
+                    }
+                )
+            return [
+                SlotSet("survey_active", False),
+                SlotSet("should_continue", False),
+                SlotSet("survey_stage", "complete"),
+                SlotSet("predicted_major", (soft_recommendations[0].get("generic_major") if soft_recommendations else None)),
+                SlotSet("prediction_confidence", (soft_recommendations[0].get("confidence", 0.0) if soft_recommendations else 0.0)),
+            ]
 
         if not major or not university_recommendations:
             dispatcher.utter_message(response="utter_ml_error")
@@ -197,14 +439,24 @@ class ActionAskNextQuestion(Action):
         dispatcher.utter_message(
             response="utter_survey_results",
             results_summary=build_results_summary(university_recommendations),
-            explanation=explanation_text,
+            explanation=build_final_recommendation_explanation(result),
         )
         dispatcher.utter_message(
             custom={
                 "type": "university_recommendations",
+                "show_confidence": False,
                 "data": university_recommendations,
             }
         )
+
+        saved = save_survey_result(
+            session_id=tracker.sender_id,
+            result=result,
+            explanation=build_final_recommendation_explanation(result),
+            answers=answers,
+        )
+        if not saved:
+            logger.warning("Survey result was shown but could not be stored for session %s", tracker.sender_id)
 
         return [
             SlotSet("survey_active", False),
@@ -280,7 +532,7 @@ class ActionProcessAnswer(Action):
                 stage = result.get("stage", "profiling")
                 next_questions = result.get("next_questions")
 
-                if next_questions and should_continue and questions_asked >= 12:
+                if next_questions and should_continue and questions_asked >= 9:
                     questions_queue = tracker.get_slot("questions_queue") or []
                     remaining = questions_queue[questions_asked:]
                     answered_set = set(answers.keys())
@@ -347,6 +599,43 @@ class ActionShowResults(Action):
         major = result.get("major")
         confidence = result.get("confidence", 0.0)
         university_recommendations = result.get("university_recommendations", [])
+        soft_recommendations = result.get("soft_university_recommendations", [])
+
+        if is_unclear_profile_result(result):
+            exploration_explanation = build_exploration_explanation(
+                result,
+                prefix="លទ្ធផលបណ្តោះអាសន្ន៖ ",
+            )
+            if has_exploration_recommendations(result):
+                dispatcher.utter_message(
+                    response="utter_survey_results_exploratory",
+                    results_summary=build_exploration_summary(soft_recommendations),
+                    explanation=explanation_text or build_unclear_profile_message(
+                        "លទ្ធផលបណ្ដោះអាសន្ន៖ ",
+                        result=result,
+                    ),
+                )
+            else:
+                dispatcher.utter_message(
+                    text=explanation_text or build_unclear_profile_message(
+                        "លទ្ធផលបណ្ដោះអាសន្ន៖ ",
+                        result=result,
+                    )
+                )
+            if soft_recommendations:
+                dispatcher.utter_message(
+                    custom={
+                        "type": "university_recommendations",
+                        "title": "ទិសដៅដែលអាចសាកស្វែងយល់បន្ថែម",
+                        "subtitle": "ជាជម្រើសសាកសមបឋមសម្រាប់អ្នកពិចារណាបន្ត",
+                        "show_confidence": False,
+                        "data": soft_recommendations,
+                    }
+                )
+            return [
+                SlotSet("predicted_major", (soft_recommendations[0].get("generic_major") if soft_recommendations else None)),
+                SlotSet("prediction_confidence", (soft_recommendations[0].get("confidence", 0.0) if soft_recommendations else 0.0)),
+            ]
 
         if not major or not university_recommendations:
             dispatcher.utter_message(response="utter_ml_error")
@@ -357,11 +646,12 @@ class ActionShowResults(Action):
             major=major,
             confidence=f"{confidence * 100:.0f}",
             results_summary=build_results_summary(university_recommendations),
-            explanation=explanation_text,
+            explanation=build_final_recommendation_explanation(result),
         )
         dispatcher.utter_message(
             custom={
                 "type": "university_recommendations",
+                "show_confidence": False,
                 "data": university_recommendations,
             }
         )
@@ -370,6 +660,28 @@ class ActionShowResults(Action):
             SlotSet("predicted_major", major),
             SlotSet("prediction_confidence", confidence),
         ]
+
+
+class ActionShowAvailableMajors(Action):
+    def name(self) -> Text:
+        return "action_show_available_majors"
+
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        major_mappings = get_university_major_mappings()
+        dispatcher.utter_message(
+            text=format_university_majors_message(major_mappings),
+            buttons=[
+                {"title": "ចាប់ផ្តើមតេស្ត", "payload": "/start_survey"},
+                {"title": "អាហារូបករណ៍", "payload": "/open_faq_scholarships"},
+                {"title": "ទំនាក់ទំនង", "payload": "/open_faq_contact"},
+            ],
+        )
+        return []
 
 
 class ActionStopSurvey(Action):
@@ -401,7 +713,34 @@ class ActionStopSurvey(Action):
 
         if answers:
             result = get_adaptive_prediction(answers)
-            if result and "major" in result:
+            if is_unclear_profile_result(result):
+                if has_exploration_recommendations(result):
+                    soft_recommendations = result.get("soft_university_recommendations", [])
+                    dispatcher.utter_message(
+                        response="utter_survey_results_exploratory",
+                        results_summary=build_exploration_summary(soft_recommendations),
+                        explanation=build_unclear_profile_message(
+                            "តេស្តត្រូវបានផ្អាកសិន។ ",
+                            result=result,
+                        ) + " វាយ 'ចាប់ផ្តើម' ដើម្បីបន្ត។"
+                    )
+                    dispatcher.utter_message(
+                        custom={
+                            "type": "university_recommendations",
+                            "title": "ទិសដៅដែលអាចសាកស្វែងយល់បន្ថែម",
+                            "subtitle": "ជាជម្រើសសាកសមបឋមសម្រាប់អ្នកពិចារណាបន្ត",
+                            "show_confidence": False,
+                            "data": soft_recommendations,
+                        }
+                    )
+                else:
+                    dispatcher.utter_message(
+                        text=build_unclear_profile_message(
+                            "តេស្តត្រូវបានផ្អាកសិន។ ",
+                            result=result,
+                        ) + " វាយ 'ចាប់ផ្តើម' ដើម្បីបន្ត។"
+                    )
+            elif result and "major" in result:
                 dispatcher.utter_message(
                     response="utter_survey_paused",
                     major=result["major"],
@@ -479,5 +818,184 @@ class ActionDefaultFallback(Action):
             dispatcher.utter_message(response="utter_major_guidance")
             return []
 
+        major_list_hints = [
+            "majors at angkor university",
+            "what majors do you have",
+            "មានជំនាញអ្វីខ្លះ",
+            "មានមុខជំនាញអ្វីខ្លះ",
+            "កម្មវិធីសិក្សាមានអ្វីខ្លះ",
+            "នៅសាកលវិទ្យាល័យអង្គរមានជំនាញអ្វីខ្លះ",
+            "សាលាមានជំនាញអ្វីខ្លះ",
+            "មាន major អ្វីខ្លះ",
+            "មានអីរៀនខ្លះ",
+            "នៅនឹងមានអីរៀនខ្លះ",
+            "នៅនឹងមានជំនាញអ្វីខ្លះ",
+            "មានមុខជំនាញប៉ុន្មាន",
+            "មានជំនាញប៉ុន្មាន",
+        ]
+        if any(hint in normalized_message for hint in major_list_hints):
+            return [FollowupAction("action_show_available_majors")]
+
         dispatcher.utter_message(response="utter_fallback_rephrase")
         return []
+
+
+class ActionShowResults(Action):
+    def name(self) -> Text:
+        return "action_show_results"
+
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        answers = tracker.get_slot("answers_collected") or {}
+
+        if not answers:
+            dispatcher.utter_message(response="utter_no_answers")
+            return []
+
+        explanation_result = get_adaptive_explanation(answers)
+        if not explanation_result or "result" not in explanation_result:
+            dispatcher.utter_message(response="utter_ml_error")
+            return []
+
+        result = explanation_result["result"]
+        explanation_text = explanation_result.get("explanation", "")
+        major = result.get("major")
+        confidence = result.get("confidence", 0.0)
+        university_recommendations = result.get("university_recommendations", [])
+        soft_recommendations = result.get("soft_university_recommendations", [])
+
+        if is_unclear_profile_result(result):
+            exploration_explanation = build_exploration_explanation(
+                result,
+                prefix="លទ្ធផលបណ្តោះអាសន្ន៖ ",
+            )
+            if has_exploration_recommendations(result):
+                dispatcher.utter_message(
+                    response="utter_survey_results_exploratory",
+                    results_summary=build_exploration_summary(soft_recommendations),
+                    explanation=exploration_explanation,
+                )
+            else:
+                dispatcher.utter_message(text=exploration_explanation)
+
+            if soft_recommendations:
+                dispatcher.utter_message(
+                    custom={
+                        "type": "university_recommendations",
+                        "title": "ទិសដៅដែលអាចសាកស្វែងយល់បន្ថែម",
+                        "subtitle": "ជាជម្រើសសាកសមបឋមសម្រាប់អ្នកពិចារណាបន្ត",
+                        "show_confidence": False,
+                        "data": soft_recommendations,
+                    }
+                )
+
+            return [
+                SlotSet("predicted_major", (soft_recommendations[0].get("generic_major") if soft_recommendations else None)),
+                SlotSet("prediction_confidence", (soft_recommendations[0].get("confidence", 0.0) if soft_recommendations else 0.0)),
+            ]
+
+        if not major or not university_recommendations:
+            dispatcher.utter_message(response="utter_ml_error")
+            return []
+
+        dispatcher.utter_message(
+            response="utter_survey_results_partial",
+            major=major,
+            confidence=f"{confidence * 100:.0f}",
+            results_summary=build_results_summary(university_recommendations),
+            explanation=build_final_recommendation_explanation(result),
+        )
+        dispatcher.utter_message(
+            custom={
+                "type": "university_recommendations",
+                "show_confidence": False,
+                "data": university_recommendations,
+            }
+        )
+
+        return [
+            SlotSet("predicted_major", major),
+            SlotSet("prediction_confidence", confidence),
+        ]
+
+
+class ActionStopSurvey(Action):
+    def name(self) -> Text:
+        return "action_stop_survey"
+
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        if not tracker.get_slot("survey_active"):
+            dispatcher.utter_message(response="utter_no_survey_active")
+            return [
+                SlotSet("questions_queue", []),
+                SlotSet("answers_collected", {}),
+                SlotSet("questions_asked_count", 0),
+                SlotSet("current_question_idx", 0),
+                SlotSet("prediction_confidence", 0.0),
+                SlotSet("predicted_major", None),
+                SlotSet("survey_stage", "profiling"),
+                SlotSet("should_continue", True),
+                SlotSet("answer_value", None),
+                SlotSet("last_processed_message_id", None),
+            ]
+
+        answers = tracker.get_slot("answers_collected") or {}
+
+        if answers:
+            result = get_adaptive_prediction(answers)
+            if is_unclear_profile_result(result):
+                if has_exploration_recommendations(result):
+                    soft_recommendations = result.get("soft_university_recommendations", [])
+                    exploration_explanation = (
+                        build_exploration_explanation(
+                            result,
+                            prefix="តេស្តត្រូវបានផ្អាកសិន។ ",
+                        ) + " វាយ 'ចាប់ផ្តើម' ដើម្បីបន្ត។"
+                    )
+                    dispatcher.utter_message(
+                        response="utter_survey_results_exploratory",
+                        results_summary=build_exploration_summary(soft_recommendations),
+                        explanation=exploration_explanation,
+                    )
+                    dispatcher.utter_message(
+                        custom={
+                            "type": "university_recommendations",
+                            "title": "ទិសដៅដែលអាចសាកស្វែងយល់បន្ថែម",
+                            "subtitle": "ជាជម្រើសសាកសមបឋមសម្រាប់អ្នកពិចារណាបន្ត",
+                            "show_confidence": False,
+                            "data": soft_recommendations,
+                        }
+                    )
+                else:
+                    dispatcher.utter_message(
+                        text=build_unclear_profile_message(
+                            "តេស្តត្រូវបានផ្អាកសិន។ ",
+                            result=result,
+                        ) + " វាយ 'ចាប់ផ្តើម' ដើម្បីបន្ត។"
+                    )
+            elif result and "major" in result:
+                dispatcher.utter_message(
+                    response="utter_survey_paused",
+                    major=result["major"],
+                    confidence=f"{result['confidence'] * 100:.0f}",
+                )
+            else:
+                dispatcher.utter_message(response="utter_survey_paused_no_pred")
+        else:
+            dispatcher.utter_message(response="utter_survey_stopped_new")
+
+        return [
+            SlotSet("survey_active", False),
+            SlotSet("should_continue", False),
+            SlotSet("answer_value", None),
+            SlotSet("last_processed_message_id", None),
+        ]

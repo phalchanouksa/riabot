@@ -210,13 +210,27 @@ nlu:
       - អំពីសាកលវិទ្យាល័យអង្គរ
       - ប្រវត្តិសាកលវិទ្យាល័យអង្គរ
 
-  - intent: open_faq_faculties
+  - intent: open_faq_majors
     examples: |
+      - majors
+      - majors at angkor university
+      - what majors do you have
+      - available majors
+      - study majors
+      - faculty
       - faculties
       - departments
-      - majors at angkor university
-      - what faculties do you have
-      - available programs
+      - មានមុខជំនាញអ្វីខ្លះ
+      - សាលាមានជំនាញអ្វីខ្លះ
+      - នៅសាកលវិទ្យាល័យអង្គរមានជំនាញអ្វីខ្លះ
+      - មានកម្មវិធីសិក្សាអ្វីខ្លះ
+      - មាន major អ្វីខ្លះ
+      - មានផ្នែកអ្វីខ្លះ
+      - មានអីរៀនខ្លះ
+      - នៅនឹងមានអីរៀនខ្លះ
+      - នៅនឹងមានជំនាញអ្វីខ្លះ
+      - មានមុខជំនាញប៉ុន្មាន
+      - មានជំនាញប៉ុន្មាន
       - មហាវិទ្យាល័យ
       - មានមហាវិទ្យាល័យអ្វីខ្លះ
       - សាលាមានជំនាញអ្វីខ្លះ

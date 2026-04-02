@@ -1,15 +1,58 @@
 import requests
 import uuid
+import json
+import logging
 from datetime import timedelta
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.conf import settings
 from django.utils import timezone
-from rest_framework_simplejwt.tokens import AccessToken
-from .models import ChatSession, ChatMessage
+from .models import ChatSession, ChatMessage, SurveyResult
 from .serializers import MessageRequestSerializer, ChatMessageSerializer, ChatSessionSerializer
+from ml_engine.services.question_mapper import get_question_info
+from ml_engine.services.recommender import MajorRecommender
+
+logger = logging.getLogger(__name__)
+RASA_HTTP_SESSION = requests.Session()
+
+
+def _build_answer_trace(answers: dict) -> list[dict]:
+    """
+    Convert raw answer map into an ordered, admin-friendly survey trace.
+    Keeps the original ask order when the JSON object preserves insertion order.
+    """
+    if not isinstance(answers, dict):
+        return []
+
+    trace = []
+    for order, (question_idx, answer_value) in enumerate(answers.items(), start=1):
+        try:
+            question_idx_int = int(question_idx)
+            answer_value_int = int(answer_value)
+        except (TypeError, ValueError):
+            continue
+
+        if question_idx_int < 96:
+            category_id = question_idx_int // 6
+            dimension = 'interest'
+        else:
+            category_id = (question_idx_int - 96) // 10
+            dimension = 'skill'
+
+        question_info = get_question_info(question_idx_int) or {}
+        trace.append({
+            'order': order,
+            'question_index': question_idx_int,
+            'question_text': question_info.get('text', ''),
+            'dimension': dimension,
+            'category_id': category_id,
+            'category_name': MajorRecommender.get_major_name(category_id),
+            'answer_value': answer_value_int,
+        })
+
+    return trace
 
 
 @api_view(['POST'])
@@ -68,15 +111,16 @@ def send_message(request):
             # Send to Rasa
             rasa_url = f"{settings.RASA_URL}/webhooks/rest/webhook"
             
-            # Use consistent sender ID for Rasa session continuity
-            rasa_sender_id = f"user_{request.user.id}"
+            # Keep one Rasa tracker per Django chat session so refresh/history
+            # can resume the same conversation without leaking across sessions.
+            rasa_sender_id = session.session_id
             
             payload = {
                 'sender': rasa_sender_id,
                 'message': message
             }
             
-            response = requests.post(
+            response = RASA_HTTP_SESSION.post(
                 rasa_url, 
                 json=payload, 
                 headers={'Content-Type': 'application/json'}, 
@@ -92,11 +136,13 @@ def send_message(request):
             # Save bot responses
             bot_messages = []
             for rasa_response in rasa_responses:
-                if isinstance(rasa_response, dict) and 'text' in rasa_response:
+                if isinstance(rasa_response, dict) and any(
+                    key in rasa_response for key in ('text', 'buttons', 'custom')
+                ):
                     bot_message = ChatMessage.objects.create(
                         session=session,
                         message_type='bot',
-                        content=rasa_response['text'],
+                        content=rasa_response.get('text', ''),
                         metadata=rasa_response
                     )
                     bot_messages.append(bot_message)
@@ -112,6 +158,8 @@ def send_message(request):
                     metadata={'fallback': True}
                 )
                 bot_messages.append(bot_message)
+
+            session.save()
             
             return Response({
                 'session_id': session.session_id,
@@ -132,6 +180,7 @@ def send_message(request):
                 content=fallback_text,
                 metadata={'rasa_offline': True, 'qwen_fallback': True}
             )
+            session.save()
             
             return Response({
                 'session_id': session.session_id,
@@ -143,12 +192,14 @@ def send_message(request):
             })
             
         except Exception as e:
+            logger.exception("Chat send_message failed for session %s", session.session_id if session else "unknown")
             error_message = ChatMessage.objects.create(
                 session=session,
                 message_type='bot',
                 content="Sorry, I'm having trouble right now. Please try again in a moment.",
                 metadata={'error': str(e)}
             )
+            session.save()
             
             return Response({
                 'session_id': session.session_id,
@@ -207,6 +258,66 @@ def delete_session(request, session_id):
         return Response({'error': 'Session not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def store_survey_result_internal(request):
+    """
+    Save a completed survey result from the Rasa action server.
+    Uses the Django chat session id as the conversation key.
+    """
+    expected_token = getattr(settings, 'RASA_TOKEN_SECRET', '')
+    provided_token = request.headers.get('X-RiaBot-Internal-Token') or request.data.get('internal_token')
+
+    if expected_token and provided_token != expected_token:
+        return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+
+    session_id = request.data.get('session_id')
+    result = request.data.get('result') or {}
+    explanation = request.data.get('explanation', '')
+    answers = request.data.get('answers') or {}
+
+    if not session_id:
+        return Response({'error': 'session_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not isinstance(result, dict):
+        return Response({'error': 'result must be an object'}, status=status.HTTP_400_BAD_REQUEST)
+
+    is_unclear_profile = result.get('final_state') == 'unclear'
+    if not result.get('major') and not is_unclear_profile:
+        return Response({'error': 'result.major is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        session = ChatSession.objects.select_related('user').get(session_id=session_id)
+    except ChatSession.DoesNotExist:
+        return Response({'error': 'Chat session not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    answer_trace = _build_answer_trace(answers)
+    saved_result = SurveyResult.objects.create(
+        user=session.user,
+        session=session,
+        recommended_major='Unclear' if is_unclear_profile else str(result.get('major', '')),
+        confidence=float(result.get('confidence') or 0.0),
+        questions_answered=int(result.get('questions_asked') or 0),
+        explanation=explanation or '',
+        result_payload={
+            'major_id': result.get('major_id'),
+            'top_3': result.get('top_3', []),
+            'university_recommendations': result.get('university_recommendations', []),
+            'stage': result.get('stage'),
+            'final_state': result.get('final_state'),
+            'questions_asked': result.get('questions_asked'),
+            'raw_answers': answers,
+            'answer_trace': answer_trace,
+        },
+    )
+
+    return Response({
+        'status': 'saved',
+        'survey_result_id': saved_result.id,
+        'trace_count': len(answer_trace),
+    })
+
+
 def _get_fallback_response(message: str) -> str:
     """
     Generate a fallback response when Rasa is offline.
@@ -236,6 +347,4 @@ def _get_fallback_response(message: str) -> str:
     return (
         "Hello! I'm RiaBot, your career guidance assistant. 😊\n\n"
         "I'm currently setting up my systems. Please try again in a moment!\n\n"
-        "In the meantime, you can type **'start'** to begin the career assessment "
-        "or **'help'** to see what I can do."
     )

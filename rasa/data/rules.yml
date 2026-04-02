@@ -36,10 +36,10 @@ rules:
       - intent: open_faq_general
       - action: utter_faq_menu_general
 
-  - rule: Answer faculties question
+  - rule: Answer available majors question
     steps:
-      - intent: open_faq_faculties
-      - action: utter_faq_menu_faculties
+      - intent: open_faq_majors
+      - action: action_show_available_majors
 
   - rule: Answer scholarship question
     steps:

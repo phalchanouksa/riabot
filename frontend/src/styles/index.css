@@ -287,33 +287,6 @@ body {
   transition: all 0.2s ease-in-out;
 }
 
-.new-chat-btn {
-  display: grid;
-  place-items: center;
-  background-color: #d1e7ff;
-  border: none;
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  padding: 0;
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.chat-container.sidebar-open .new-chat-btn {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 0.5rem;
-  width: auto;
-  height: auto;
-  border-radius: 1.5rem;
-  padding: 0.5rem 1rem;
-  margin-left: 1rem;
-}
-
 .sidebar-content {
   flex: 1;
   opacity: 0;
@@ -329,34 +302,6 @@ body {
   border-bottom: 1px solid var(--border);
   min-height: 60px;
   position: relative;
-}
-
-.chat-header-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.copy-chat-log-btn {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  border-radius: 999px;
-  padding: 0.45rem 0.9rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
-}
-
-.copy-chat-log-btn:hover:not(:disabled) {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-.copy-chat-log-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
 }
 
 .header-logo {
@@ -469,13 +414,11 @@ body {
   border: 1px solid var(--primary);
 }
 
-.profile-name,
-.new-chat-text {
+.profile-name {
   display: none;
 }
 
-.chat-container.sidebar-open .profile-name,
-.chat-container.sidebar-open .new-chat-text {
+.chat-container.sidebar-open .profile-name {
   display: inline;
 }
 

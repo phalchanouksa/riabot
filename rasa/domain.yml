@@ -12,7 +12,7 @@ intents:
   - show_results
   - open_faq
   - open_faq_general
-  - open_faq_faculties
+  - open_faq_majors
   - open_faq_scholarships
   - open_faq_tuition
   - open_faq_contact
@@ -139,8 +139,8 @@ responses:
       buttons:
         - title: "ព័ត៌មានទូទៅ"
           payload: "/open_faq_general"
-        - title: "មហាវិទ្យាល័យ"
-          payload: "/open_faq_faculties"
+        - title: "មុខជំនាញ"
+          payload: "/open_faq_majors"
         - title: "អាហារូបករណ៍"
           payload: "/open_faq_scholarships"
         - title: "តម្លៃសិក្សា"
@@ -153,18 +153,8 @@ responses:
   utter_faq_menu_general:
     - text: "សាកលវិទ្យាល័យអង្គរ (Angkor University) គឺជាគ្រឹះស្ថានឧត្តមសិក្សាឯកជនមួយនៅខេត្តសៀមរាប ដែលត្រូវបានបង្កើតឡើងនៅឆ្នាំ ២០០៤ និងទទួលស្គាល់ដោយក្រសួងពាក់ព័ន្ធ។"
       buttons:
-        - title: "មហាវិទ្យាល័យ"
-          payload: "/open_faq_faculties"
-        - title: "ទំនាក់ទំនង"
-          payload: "/open_faq_contact"
-        - title: "ត្រឡប់ទៅ FAQ"
-          payload: "/open_faq"
-
-  utter_faq_menu_faculties:
-    - text: "សាកលវិទ្យាល័យអង្គរមានមហាវិទ្យាល័យសំខាន់ៗដូចជា សុខភាពសាធារណៈ, វិទ្យាសាស្ត្រ និងបច្ចេកវិទ្យា, វិស្វកម្ម និងស្ថាបត្យកម្ម, គ្រប់គ្រងពាណិជ្ជកម្ម និងទេសចរណ៍, សង្គមវិទ្យា និងច្បាប់, មនុស្សសាស្ត្រ និងភាសាបរទេស និងកសិកម្ម។"
-      buttons:
-        - title: "តម្លៃសិក្សា"
-          payload: "/open_faq_tuition"
+        - title: "មុខជំនាញ"
+          payload: "/open_faq_majors"
         - title: "ទំនាក់ទំនង"
           payload: "/open_faq_contact"
         - title: "ត្រឡប់ទៅ FAQ"
@@ -204,7 +194,7 @@ responses:
     - text: "យើងនឹងចាប់ផ្តើមតេស្តណែនាំជំនាញសិក្សា។ សូមឆ្លើយសំណួរនីមួយៗដោយប្រើលេខតាមជម្រើសដែលបង្ហាញ។"
 
   utter_ask_question:
-    - text: "សំណួរទី {question_num}: {question_text}\n{scale}\n\nវគ្គបច្ចុប្បន្ន៖ {stage} | ភាពជឿជាក់៖ {confidence}%"
+    - text: "សំណួរទី {question_num}: {question_text}\n{scale}"
 
   utter_ask_question_fallback:
     - text: "សំណួរទី {question_num}: សូមជ្រើសចម្លើយរបស់អ្នកសម្រាប់សំណួរ {question_idx}\n{scale}"
@@ -216,7 +206,10 @@ responses:
     - text: "លទ្ធផលណែនាំជំនាញសិក្សារបស់អ្នកបានរួចរាល់។\n\n{results_summary}\n\nមូលហេតុសង្ខេប៖\n{explanation}"
 
   utter_survey_results_partial:
-    - text: "នេះជាលទ្ធផលបណ្តោះអាសន្នរបស់អ្នក៖ **{major}** (ភាពជឿជាក់ {confidence}%)\n\n{results_summary}\n\nមូលហេតុសង្ខេប៖\n{explanation}"
+    - text: "នេះជាលទ្ធផលបណ្តោះអាសន្នរបស់អ្នក៖ **{major}**\n\n{results_summary}\n\nមូលហេតុសង្ខេប៖\n{explanation}"
+
+  utter_survey_results_exploratory:
+    - text: "ទិសដៅមុខជំនាញដែលអ្នកអាចសាកស្វែងយល់បន្ថែម៖\n\n{results_summary}\n\nមូលហេតុសង្ខេប៖\n{explanation}"
 
   utter_ml_error:
     - text: "សូមអភ័យទោស។ ប្រព័ន្ធមិនអាចបង្ហាញលទ្ធផលបាននៅពេលនេះទេ។ សូមសាកល្បងម្តងទៀតបន្តិចក្រោយ។"
@@ -234,7 +227,7 @@ responses:
     - text: "សម្រាប់សំណួរជំនាញ សូមឆ្លើយជាលេខ 0 ដល់ 3។"
 
   utter_survey_paused:
-    - text: "តេស្តត្រូវបានផ្អាកសិន។ លទ្ធផលបណ្តោះអាសន្នរបស់អ្នកគឺ **{major}** (ភាពជឿជាក់ {confidence}%)។ វាយ 'ចាប់ផ្តើម' ដើម្បីបន្ត។"
+    - text: "តេស្តត្រូវបានផ្អាកសិន។ លទ្ធផលបណ្តោះអាសន្នរបស់អ្នកគឺ **{major}**។ វាយ 'ចាប់ផ្តើម' ដើម្បីបន្ត។"
 
   utter_survey_paused_no_pred:
     - text: "តេស្តត្រូវបានផ្អាកសិន។ វាយ 'ចាប់ផ្តើម' ដើម្បីបន្ត។"
@@ -255,6 +248,7 @@ actions:
   - action_ask_next_question
   - action_process_answer
   - action_show_results
+  - action_show_available_majors
   - action_stop_survey
   - action_default_fallback
 

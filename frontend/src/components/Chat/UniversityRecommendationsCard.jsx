@@ -1,6 +1,6 @@
 import React from 'react';
 
-const UniversityRecommendationsCard = ({ data }) => {
+const UniversityRecommendationsCard = ({ data, title, subtitle, showConfidence = true }) => {
   if (!Array.isArray(data) || data.length === 0) {
     return null;
   }
@@ -8,8 +8,10 @@ const UniversityRecommendationsCard = ({ data }) => {
   return (
     <div className="university-results-card">
       <div className="university-results-header">
-        <h3>មុខជំនាញនៅសាកលវិទ្យាល័យអង្គរ</h3>
-        <p>បង្ហាញតែជម្រើសដែលមានបង្រៀននៅ Angkor University ប៉ុណ្ណោះ។</p>
+        <h3>{title || "មុខជំនាញនៅសាកលវិទ្យាល័យអង្គរ"}</h3>
+        <p>
+          {subtitle || "បង្ហាញតែជម្រើសដែលមានបង្រៀននៅ Angkor University ប៉ុណ្ណោះ។"}
+        </p>
       </div>
 
       <div className="university-results-groups">
@@ -20,9 +22,11 @@ const UniversityRecommendationsCard = ({ data }) => {
                 <span className="university-result-rank">{index + 1}</span>
                 <h4>{group.generic_major}</h4>
               </div>
-              <span className="university-result-confidence">
-                {Math.round((group.confidence || 0) * 100)}%
-              </span>
+              {showConfidence && (
+                <span className="university-result-confidence">
+                  {Math.round((group.confidence || 0) * 100)}%
+                </span>
+              )}
             </div>
 
             <div className="university-program-list">
