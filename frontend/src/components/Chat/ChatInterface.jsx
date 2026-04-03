@@ -426,7 +426,7 @@ const ChatInterface = () => {
         onClose={closeSettingsMenu}
         className="settings-menu"
       >
-        <div className="language-menu-container" onMouseEnter={() => setIsLangMenuOpen(true)} onMouseLeave={() => setIsLangMenuOpen(false)}>
+        <div className="language-menu-container">
           <button
             type="button"
             className={`menu-item menu-item--submenu ${isLangMenuOpen ? 'is-open' : ''}`}
@@ -465,7 +465,7 @@ const ChatInterface = () => {
             </div>
           )}
         </div>
-        <div className="theme-menu-container" onMouseEnter={() => setIsThemeMenuOpen(true)} onMouseLeave={() => setIsThemeMenuOpen(false)}>
+        <div className="theme-menu-container">
           <button
             type="button"
             className={`menu-item menu-item--submenu ${isThemeMenuOpen ? 'is-open' : ''}`}
