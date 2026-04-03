@@ -2,7 +2,7 @@ import React, { useLayoutEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import './ContextMenu.css';
 
-const ContextMenu = ({ isOpen, children, triggerRef, onClose }) => {
+const ContextMenu = ({ isOpen, children, triggerRef, onClose, className = '' }) => {
   const menuRef = useRef(null);
 
   useLayoutEffect(() => {
@@ -58,7 +58,7 @@ const ContextMenu = ({ isOpen, children, triggerRef, onClose }) => {
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
-    <div ref={menuRef} className="context-menu">
+    <div ref={menuRef} className={`context-menu ${className}`.trim()}>
       {children}
     </div>,
     document.body

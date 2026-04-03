@@ -400,6 +400,15 @@ body {
   white-space: nowrap;
   cursor: pointer;
   position: relative;
+  width: 100%;
+  justify-content: center;
+  padding: 0.4rem;
+  border-radius: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.profile-section:hover {
+  background: var(--hover-bg);
 }
 
 .profile-avatar {
@@ -420,6 +429,15 @@ body {
 
 .chat-container.sidebar-open .profile-name {
   display: inline;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+.chat-container.sidebar-open .profile-section {
+  justify-content: flex-start;
+  padding: 0.5rem 0.65rem;
 }
 
 

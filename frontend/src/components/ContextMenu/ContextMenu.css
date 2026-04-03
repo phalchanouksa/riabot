@@ -1,27 +1,45 @@
 .context-menu {
-  position: fixed; /* Use fixed positioning for portal */
-  background-color: var(--surface);
+  position: fixed;
+  min-width: 220px;
+  padding: 0.45rem;
+  border-radius: 0.95rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.5rem;
-  width: 180px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 2000; /* Ensure it's above everything */
+  background: var(--surface);
+  box-shadow: 0 10px 30px -18px rgba(15, 23, 42, 0.18);
   color: var(--text);
+  z-index: 2000;
+}
+
+.context-menu.profile-menu {
+  width: 280px;
+}
+
+.context-menu.settings-menu {
+  width: 248px;
 }
 
 .context-menu .menu-item {
-  padding: 8px 12px;
+  width: 100%;
+  padding: 0.68rem 0.78rem;
+  border: none;
+  border-radius: 0.8rem;
+  background: transparent;
+  color: var(--text);
   cursor: pointer;
-  border-radius: 4px;
-  white-space: nowrap;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
+  text-align: left;
+  white-space: nowrap;
+  font: inherit;
+  transition: background-color 0.16s ease, color 0.16s ease;
 }
 
-.context-menu .menu-item:hover {
-  background-color: var(--bg);
+.context-menu .menu-item:hover,
+.context-menu .menu-item.is-open,
+.context-menu .menu-item--option.active {
+  background: var(--hover-bg);
 }
 
 .context-menu .theme-menu-container,
@@ -29,16 +47,137 @@
   position: relative;
 }
 
+.context-menu .menu-item-main {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.context-menu .menu-item-label {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: inherit;
+}
+
+.context-menu .menu-item-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  flex-shrink: 0;
+  transition: color 0.16s ease;
+}
+
+.context-menu .menu-item-icon {
+  width: 1rem;
+  height: 1rem;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: color 0.16s ease;
+}
+
+.context-menu .menu-item-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.context-menu .menu-item:hover .menu-item-icon,
+.context-menu .menu-item:hover .menu-item-meta,
+.context-menu .menu-item.is-open .menu-item-icon,
+.context-menu .menu-item.is-open .menu-item-meta,
+.context-menu .menu-item--option.active .menu-item-icon,
+.context-menu .menu-item--option.active .menu-item-meta {
+  color: var(--text);
+}
+
+.context-menu .menu-item--danger {
+  color: var(--text);
+}
+
+.context-menu .menu-item--danger .menu-item-icon {
+  color: var(--text-muted);
+}
+
+.context-menu .menu-divider {
+  height: 1px;
+  margin: 0.3rem 0;
+  background: color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.context-menu .menu-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.45rem 0.55rem 0.6rem;
+}
+
+.context-menu .menu-profile-avatar {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--text);
+  color: var(--surface);
+  border: 1px solid var(--primary);
+  font-weight: 600;
+  font-size: 0.92rem;
+  flex-shrink: 0;
+}
+
+.context-menu .menu-profile-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.context-menu .menu-profile-copy strong {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.context-menu .menu-profile-copy span {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.context-menu .menu-chevron,
+.context-menu .menu-check {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+  transition: color 0.16s ease;
+}
+
+.context-menu .menu-chevron {
+  color: var(--text-muted);
+}
+
+.context-menu .menu-check {
+  color: var(--primary);
+}
+
 .context-menu .theme-submenu,
 .context-menu .language-submenu {
   position: absolute;
-  left: 100%;
-  top: -5px; /* Align with parent menu item */
-  background-color: var(--surface);
+  left: calc(100% + 0.55rem);
+  top: 0;
+  width: 190px;
+  padding: 0.45rem;
+  border-radius: 0.95rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.5rem;
-  width: 120px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: var(--surface);
+  box-shadow: 0 10px 30px -18px rgba(15, 23, 42, 0.18);
   z-index: 2001;
 }

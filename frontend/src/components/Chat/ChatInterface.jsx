@@ -15,6 +15,45 @@ const CHAT_LOG_CHEAT_CODE = 'copyallchat';
 const CHEAT_CODE_TIMEOUT_MS = 1500;
 const SURVEY_QUESTION_PATTERN = /^សំណួរទី\s*(\d+):\s*([^\n]+)/m;
 
+const ChevronRightIcon = () => (
+  <svg className="menu-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M6 3.5 10.5 8 6 12.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg className="menu-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="m3.5 8.5 2.6 2.6L12.5 4.9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const PencilIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="m11.9 2.5 1.6 1.6c.5.5.5 1.2 0 1.7l-6.8 6.8-2.8.8.8-2.8 6.8-6.8c.5-.5 1.2-.5 1.7 0Z" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="m10.8 3.6 1.6 1.6" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const LogoutIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M6.5 2.75h-1a1.75 1.75 0 0 0-1.75 1.75v7a1.75 1.75 0 0 0 1.75 1.75h1" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M9 5.25 12 8l-3 2.75" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M12 8H6.5" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const LanguageIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M2.75 4.25h6.5M6 2.5c-.1 2-1.1 4.6-3 6.7M6.1 9.2c-.7-.5-1.2-.9-1.8-1.6M8.5 12.75l2.9-7 2.9 7M9.3 10.75h4.2" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const ThemeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M12.4 10.8A5.25 5.25 0 0 1 5.2 3.6 5.75 5.75 0 1 0 12.4 10.8Z" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 const mapStoredMessageToUiMessage = (message) => {
   const metadata = message.metadata || {};
   return {
@@ -62,8 +101,8 @@ const parseSurveyMessage = (message) => {
 
 const ChatInterface = () => {
   const { t, i18n } = useTranslation();
-  const { setTheme } = useTheme();
-  const { logout, setUser } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const { user, logout, setUser } = useAuth();
   const [updateError, setUpdateError] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -72,7 +111,6 @@ const ChatInterface = () => {
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
-  const [profileFormData, setProfileFormData] = useState({ firstName: '', lastName: '' });
   const [isSidebarOpen, setIsSidebarOpen] = useState(localStorage.getItem('isSidebarOpen') !== 'false');
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -80,6 +118,17 @@ const ChatInterface = () => {
   const [sessionId, setSessionId] = useState(null);
   const cheatBufferRef = useRef('');
   const cheatLastKeyTimeRef = useRef(0);
+  const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.username || 'RiaBot User';
+  const profileHandle = user?.username ? `@${user.username}` : (user?.email || '');
+  const profileInitial = (displayName || 'R').trim().charAt(0).toUpperCase();
+  const activeLanguageLabel = i18n.language === 'km' ? t('khmer') : t('english');
+  const activeThemeLabel = theme === 'dark' ? t('dark') : t('light');
+
+  const closeSettingsMenu = () => {
+    setIsSettingsOpen(false);
+    setIsLangMenuOpen(false);
+    setIsThemeMenuOpen(false);
+  };
 
   const activeSurveyQuestion = useMemo(() => {
     const latestBotMessage = [...messages].reverse().find((message) => message.type === 'bot');
@@ -280,6 +329,16 @@ const ChatInterface = () => {
     }
   };
 
+  const handleChangeLanguage = (language) => {
+    i18n.changeLanguage(language);
+    closeSettingsMenu();
+  };
+
+  const handleChangeTheme = (nextTheme) => {
+    setTheme(nextTheme);
+    closeSettingsMenu();
+  };
+
 
   return (
     <div className={`chat-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
@@ -287,8 +346,21 @@ const ChatInterface = () => {
         isSidebarOpen={isSidebarOpen}
         profileTriggerRef={profileTriggerRef}
         settingsTriggerRef={settingsTriggerRef}
-        onProfileClick={() => { setProfileOpen(p => !p); setIsSettingsOpen(false); }}
-        onSettingsClick={() => { setIsSettingsOpen(p => !p); setProfileOpen(false); }}
+        onProfileClick={() => {
+          setProfileOpen((previous) => !previous);
+          closeSettingsMenu();
+        }}
+        onSettingsClick={() => {
+          setProfileOpen(false);
+          setIsSettingsOpen((previous) => {
+            const next = !previous;
+            if (!next) {
+              setIsLangMenuOpen(false);
+              setIsThemeMenuOpen(false);
+            }
+            return next;
+          });
+        }}
       />
 
       <div className="main-chat">
@@ -312,27 +384,123 @@ const ChatInterface = () => {
         />
       </div>
 
-      <ContextMenu isOpen={profileOpen} triggerRef={profileTriggerRef} onClose={() => setProfileOpen(false)}>
-        <div className="menu-item" onClick={() => { setEditProfileOpen(true); setProfileOpen(false); }}>{t('editProfile')}</div>
-        <div className="menu-item" onClick={logout}>{t('logout')}</div>
+      <ContextMenu
+        isOpen={profileOpen}
+        triggerRef={profileTriggerRef}
+        onClose={() => setProfileOpen(false)}
+        className="profile-menu"
+      >
+        <div className="menu-profile-header">
+          <div className="menu-profile-avatar">{profileInitial}</div>
+          <div className="menu-profile-copy">
+            <strong>{displayName}</strong>
+            {profileHandle && <span>{profileHandle}</span>}
+          </div>
+        </div>
+        <div className="menu-divider" />
+        <button
+          type="button"
+          className="menu-item"
+          onClick={() => { setEditProfileOpen(true); setProfileOpen(false); }}
+        >
+          <span className="menu-item-main">
+            <span className="menu-item-icon"><PencilIcon /></span>
+            <span className="menu-item-label">{t('editProfile')}</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="menu-item menu-item--danger"
+          onClick={() => { setProfileOpen(false); logout(); }}
+        >
+          <span className="menu-item-main">
+            <span className="menu-item-icon"><LogoutIcon /></span>
+            <span className="menu-item-label">{t('logout')}</span>
+          </span>
+        </button>
       </ContextMenu>
 
-      <ContextMenu isOpen={isSettingsOpen} triggerRef={settingsTriggerRef} onClose={() => setIsSettingsOpen(false)}>
+      <ContextMenu
+        isOpen={isSettingsOpen}
+        triggerRef={settingsTriggerRef}
+        onClose={closeSettingsMenu}
+        className="settings-menu"
+      >
         <div className="language-menu-container" onMouseEnter={() => setIsLangMenuOpen(true)} onMouseLeave={() => setIsLangMenuOpen(false)}>
-          <div className="menu-item language-menu-toggle">{t('language')} <span>▸</span></div>
+          <button
+            type="button"
+            className={`menu-item menu-item--submenu ${isLangMenuOpen ? 'is-open' : ''}`}
+            onClick={() => {
+              setIsLangMenuOpen((previous) => !previous);
+              setIsThemeMenuOpen(false);
+            }}
+          >
+            <span className="menu-item-main">
+              <span className="menu-item-icon"><LanguageIcon /></span>
+              <span className="menu-item-label">{t('language')}</span>
+            </span>
+            <span className="menu-item-meta">
+              <span>{activeLanguageLabel}</span>
+              <ChevronRightIcon />
+            </span>
+          </button>
           {isLangMenuOpen && (
             <div className="language-submenu">
-              <div className="menu-item" onClick={() => { i18n.changeLanguage('en'); setIsSettingsOpen(false); }}>{t('english')}</div>
-              <div className="menu-item" onClick={() => { i18n.changeLanguage('km'); setIsSettingsOpen(false); }}>{t('khmer')}</div>
+              <button
+                type="button"
+                className={`menu-item menu-item--option ${i18n.language === 'en' ? 'active' : ''}`}
+                onClick={() => handleChangeLanguage('en')}
+              >
+                <span className="menu-item-label">{t('english')}</span>
+                {i18n.language === 'en' && <CheckIcon />}
+              </button>
+              <button
+                type="button"
+                className={`menu-item menu-item--option ${i18n.language === 'km' ? 'active' : ''}`}
+                onClick={() => handleChangeLanguage('km')}
+              >
+                <span className="menu-item-label">{t('khmer')}</span>
+                {i18n.language === 'km' && <CheckIcon />}
+              </button>
             </div>
           )}
         </div>
         <div className="theme-menu-container" onMouseEnter={() => setIsThemeMenuOpen(true)} onMouseLeave={() => setIsThemeMenuOpen(false)}>
-          <div className="menu-item theme-menu-toggle">{t('theme')} <span>▸</span></div>
+          <button
+            type="button"
+            className={`menu-item menu-item--submenu ${isThemeMenuOpen ? 'is-open' : ''}`}
+            onClick={() => {
+              setIsThemeMenuOpen((previous) => !previous);
+              setIsLangMenuOpen(false);
+            }}
+          >
+            <span className="menu-item-main">
+              <span className="menu-item-icon"><ThemeIcon /></span>
+              <span className="menu-item-label">{t('theme')}</span>
+            </span>
+            <span className="menu-item-meta">
+              <span>{activeThemeLabel}</span>
+              <ChevronRightIcon />
+            </span>
+          </button>
           {isThemeMenuOpen && (
             <div className="theme-submenu">
-              <div className="menu-item" onClick={() => { setTheme('light'); setIsSettingsOpen(false); }}>{t('light')}</div>
-              <div className="menu-item" onClick={() => { setTheme('dark'); setIsSettingsOpen(false); }}>{t('dark')}</div>
+              <button
+                type="button"
+                className={`menu-item menu-item--option ${theme === 'light' ? 'active' : ''}`}
+                onClick={() => handleChangeTheme('light')}
+              >
+                <span className="menu-item-label">{t('light')}</span>
+                {theme === 'light' && <CheckIcon />}
+              </button>
+              <button
+                type="button"
+                className={`menu-item menu-item--option ${theme === 'dark' ? 'active' : ''}`}
+                onClick={() => handleChangeTheme('dark')}
+              >
+                <span className="menu-item-label">{t('dark')}</span>
+                {theme === 'dark' && <CheckIcon />}
+              </button>
             </div>
           )}
         </div>

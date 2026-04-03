@@ -7,6 +7,8 @@ import './ProfileEditModal.css';
 const ProfileEditModal = ({ isOpen, onClose, onUpdate, updateError }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.username || 'User';
+  const accountMeta = user?.email || (user?.username ? `@${user.username}` : '');
   const [activeTab, setActiveTab] = useState('profile');
   const [formData, setFormData] = useState({
     firstName: '',
@@ -107,11 +109,11 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate, updateError }) => {
               {user?.first_name?.charAt(0).toUpperCase() || user?.username?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div className="profile-info">
-              <h2>{user?.first_name || user?.username || 'User'}</h2>
-              <p className="profile-email">{user?.email || user?.username}</p>
+              <h2>{displayName}</h2>
+              <p className="profile-email">{accountMeta}</p>
             </div>
           </div>
-          <button className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" onClick={onClose}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -120,14 +122,16 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate, updateError }) => {
         </div>
 
         <div className="modal-tabs">
-          <button 
-            className={`tab ${activeTab === 'profile' ? 'active' : ''}`}
+          <button
+            type="button"
+            className={`profile-modal-tab ${activeTab === 'profile' ? 'active' : ''}`}
             onClick={() => setActiveTab('profile')}
           >
             {t('personalInfo') || 'Personal info'}
           </button>
-          <button 
-            className={`tab ${activeTab === 'security' ? 'active' : ''}`}
+          <button
+            type="button"
+            className={`profile-modal-tab ${activeTab === 'security' ? 'active' : ''}`}
             onClick={() => setActiveTab('security')}
           >
             {t('security') || 'Security'}
@@ -187,7 +191,10 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate, updateError }) => {
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="btn btn-primary">
+                <button type="button" className="profile-modal-btn profile-modal-btn-secondary" onClick={onClose}>
+                  {t('cancel') || 'Cancel'}
+                </button>
+                <button type="submit" className="profile-modal-btn profile-modal-btn-primary">
                   {t('save') || 'Save'}
                 </button>
               </div>
@@ -246,7 +253,10 @@ const ProfileEditModal = ({ isOpen, onClose, onUpdate, updateError }) => {
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="btn btn-primary">
+                <button type="button" className="profile-modal-btn profile-modal-btn-secondary" onClick={onClose}>
+                  {t('cancel') || 'Cancel'}
+                </button>
+                <button type="submit" className="profile-modal-btn profile-modal-btn-primary">
                   {t('changePassword') || 'Change password'}
                 </button>
               </div>
