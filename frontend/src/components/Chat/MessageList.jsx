@@ -1,9 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
-import TypingEffect from './TypingEffect';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
+import TypingEffect from './TypingEffect';
 import UniversityRecommendationsCard from './UniversityRecommendationsCard';
+
+const isNumericSurveyButtons = (buttons) =>
+  Array.isArray(buttons) &&
+  buttons.length > 0 &&
+  buttons.every((button) => /^-?\d+$/.test(String(button?.title ?? '').trim()));
 
 const MessageList = ({ messages, loading, onButtonSubmit }) => {
   const [animatedMessages, setAnimatedMessages] = useState(new Set());
@@ -12,15 +17,23 @@ const MessageList = ({ messages, loading, onButtonSubmit }) => {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const handleAnimationComplete = (messageId) => {
+    setAnimatedMessages((prev) => new Set(prev).add(messageId));
   };
 
-  const handleAnimationComplete = (messageId) => {
-    setAnimatedMessages(prev => new Set(prev).add(messageId));
+  const shouldAnimateMessage = (message, index) => {
+    if (message.type !== 'bot' || index !== messages.length - 1) {
+      return false;
+    }
+
+    if (animatedMessages.has(message.id)) {
+      return false;
+    }
+
+    return Boolean((message.content || '').trim());
   };
 
   const renderMessage = (message, index) => {
@@ -29,25 +42,26 @@ const MessageList = ({ messages, loading, onButtonSubmit }) => {
     const hasUniversityRecommendations =
       message.custom?.type === 'university_recommendations' &&
       Array.isArray(message.custom?.data);
+    const hasSurveyChoices = isNumericSurveyButtons(message.buttons);
+    const isAnimatingMessage = shouldAnimateMessage(message, index);
 
     const messageClass = isUser ? 'user-message' : 'bot-message';
     const avatarContent = isUser ? ' ' : (isSystem ? ' ' : '');
-    const bubbleClass = `message-bubble ${isSystem ? 'system-bubble' : ''} ${hasUniversityRecommendations ? 'structured-bubble' : ''}`;
+    const bubbleClass = `message-bubble ${isSystem ? 'system-bubble' : ''} ${hasUniversityRecommendations ? 'structured-bubble' : ''} ${hasSurveyChoices ? 'survey-bubble' : ''}`;
 
     return (
       <div key={message.id} className={`message ${messageClass}`}>
         {!isUser && <div className="message-avatar">{avatarContent}</div>}
         <div className={bubbleClass}>
-          {
-            message.type === 'bot' && index === messages.length - 1 && !animatedMessages.has(message.id) ? (
-              <TypingEffect
-                fullText={message.content}
-                onComplete={() => handleAnimationComplete(message.id)}
-              />
-            ) : (
-              <ReactMarkdown>{message.content}</ReactMarkdown>
-            )
-          }
+          {isAnimatingMessage ? (
+            <TypingEffect
+              fullText={message.content}
+              onComplete={() => handleAnimationComplete(message.id)}
+            />
+          ) : (
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+          )}
+
           {hasUniversityRecommendations && (
             <UniversityRecommendationsCard
               data={message.custom.data}
@@ -56,26 +70,14 @@ const MessageList = ({ messages, loading, onButtonSubmit }) => {
               showConfidence={message.custom.show_confidence}
             />
           )}
-          {message.buttons && message.buttons.length > 0 && (
-            <div className="message-buttons" style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+
+          {message.buttons && message.buttons.length > 0 && (!hasSurveyChoices || !isAnimatingMessage) && (
+            <div className={`message-buttons ${hasSurveyChoices ? 'survey-buttons' : 'nav-buttons'}`}>
               {message.buttons.map((btn, i) => (
                 <button
                   key={i}
                   onClick={() => onButtonSubmit(btn.payload)}
-                  className="interactive-btn"
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                    background: 'var(--primary-color, #4A90E2)',
-                    color: 'white',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontFamily: 'inherit',
-                    transition: 'opacity 0.2s',
-                  }}
-                  onMouseOver={(e) => e.target.style.opacity = 0.8}
-                  onMouseOut={(e) => e.target.style.opacity = 1}
+                  className={`interactive-btn ${hasSurveyChoices ? 'survey-choice-btn' : 'nav-chip-btn'}`}
                 >
                   {btn.title}
                 </button>
@@ -99,12 +101,14 @@ const MessageList = ({ messages, loading, onButtonSubmit }) => {
         ) : (
           messages.map((message, index) => renderMessage(message, index))
         )}
+
         {loading && (
           <div className="message bot-message">
             <div className="message-avatar"> </div>
             <div className="message-bubble loading-bubble">{t('riaBotIsThinking')}</div>
           </div>
         )}
+
         <div ref={messagesEndRef} />
       </div>
     </div>

@@ -697,6 +697,7 @@ class ActionStopSurvey(Action):
         if not tracker.get_slot("survey_active"):
             dispatcher.utter_message(response="utter_no_survey_active")
             return [
+                SlotSet("survey_active", False),
                 SlotSet("questions_queue", []),
                 SlotSet("answers_collected", {}),
                 SlotSet("questions_asked_count", 0),
@@ -709,51 +710,20 @@ class ActionStopSurvey(Action):
                 SlotSet("last_processed_message_id", None),
             ]
 
-        answers = tracker.get_slot("answers_collected") or {}
-
-        if answers:
-            result = get_adaptive_prediction(answers)
-            if is_unclear_profile_result(result):
-                if has_exploration_recommendations(result):
-                    soft_recommendations = result.get("soft_university_recommendations", [])
-                    dispatcher.utter_message(
-                        response="utter_survey_results_exploratory",
-                        results_summary=build_exploration_summary(soft_recommendations),
-                        explanation=build_unclear_profile_message(
-                            "តេស្តត្រូវបានផ្អាកសិន។ ",
-                            result=result,
-                        ) + " វាយ 'ចាប់ផ្តើម' ដើម្បីបន្ត។"
-                    )
-                    dispatcher.utter_message(
-                        custom={
-                            "type": "university_recommendations",
-                            "title": "ទិសដៅដែលអាចសាកស្វែងយល់បន្ថែម",
-                            "subtitle": "ជាជម្រើសសាកសមបឋមសម្រាប់អ្នកពិចារណាបន្ត",
-                            "show_confidence": False,
-                            "data": soft_recommendations,
-                        }
-                    )
-                else:
-                    dispatcher.utter_message(
-                        text=build_unclear_profile_message(
-                            "តេស្តត្រូវបានផ្អាកសិន។ ",
-                            result=result,
-                        ) + " វាយ 'ចាប់ផ្តើម' ដើម្បីបន្ត។"
-                    )
-            elif result and "major" in result:
-                dispatcher.utter_message(
-                    response="utter_survey_paused",
-                    major=result["major"],
-                    confidence=f"{result['confidence'] * 100:.0f}",
-                )
-            else:
-                dispatcher.utter_message(response="utter_survey_paused_no_pred")
-        else:
-            dispatcher.utter_message(response="utter_survey_stopped_new")
+        dispatcher.utter_message(
+            text="បានបញ្ឈប់តេស្តហើយ។ ប្រសិនបើចង់ធ្វើម្តងទៀត សូមវាយ 'ចាប់ផ្តើម' ដើម្បីចាប់ផ្តើមតេស្តថ្មី។"
+        )
 
         return [
             SlotSet("survey_active", False),
-            SlotSet("should_continue", False),
+            SlotSet("questions_queue", []),
+            SlotSet("answers_collected", {}),
+            SlotSet("questions_asked_count", 0),
+            SlotSet("current_question_idx", 0),
+            SlotSet("prediction_confidence", 0.0),
+            SlotSet("predicted_major", None),
+            SlotSet("survey_stage", "profiling"),
+            SlotSet("should_continue", True),
             SlotSet("answer_value", None),
             SlotSet("last_processed_message_id", None),
         ]
@@ -936,6 +906,7 @@ class ActionStopSurvey(Action):
         if not tracker.get_slot("survey_active"):
             dispatcher.utter_message(response="utter_no_survey_active")
             return [
+                SlotSet("survey_active", False),
                 SlotSet("questions_queue", []),
                 SlotSet("answers_collected", {}),
                 SlotSet("questions_asked_count", 0),
@@ -948,54 +919,20 @@ class ActionStopSurvey(Action):
                 SlotSet("last_processed_message_id", None),
             ]
 
-        answers = tracker.get_slot("answers_collected") or {}
-
-        if answers:
-            result = get_adaptive_prediction(answers)
-            if is_unclear_profile_result(result):
-                if has_exploration_recommendations(result):
-                    soft_recommendations = result.get("soft_university_recommendations", [])
-                    exploration_explanation = (
-                        build_exploration_explanation(
-                            result,
-                            prefix="តេស្តត្រូវបានផ្អាកសិន។ ",
-                        ) + " វាយ 'ចាប់ផ្តើម' ដើម្បីបន្ត។"
-                    )
-                    dispatcher.utter_message(
-                        response="utter_survey_results_exploratory",
-                        results_summary=build_exploration_summary(soft_recommendations),
-                        explanation=exploration_explanation,
-                    )
-                    dispatcher.utter_message(
-                        custom={
-                            "type": "university_recommendations",
-                            "title": "ទិសដៅដែលអាចសាកស្វែងយល់បន្ថែម",
-                            "subtitle": "ជាជម្រើសសាកសមបឋមសម្រាប់អ្នកពិចារណាបន្ត",
-                            "show_confidence": False,
-                            "data": soft_recommendations,
-                        }
-                    )
-                else:
-                    dispatcher.utter_message(
-                        text=build_unclear_profile_message(
-                            "តេស្តត្រូវបានផ្អាកសិន។ ",
-                            result=result,
-                        ) + " វាយ 'ចាប់ផ្តើម' ដើម្បីបន្ត។"
-                    )
-            elif result and "major" in result:
-                dispatcher.utter_message(
-                    response="utter_survey_paused",
-                    major=result["major"],
-                    confidence=f"{result['confidence'] * 100:.0f}",
-                )
-            else:
-                dispatcher.utter_message(response="utter_survey_paused_no_pred")
-        else:
-            dispatcher.utter_message(response="utter_survey_stopped_new")
+        dispatcher.utter_message(
+            text="បានបញ្ឈប់តេស្តហើយ។ ប្រសិនបើចង់ធ្វើម្តងទៀត សូមវាយ 'ចាប់ផ្តើម' ដើម្បីចាប់ផ្តើមតេស្តថ្មី។"
+        )
 
         return [
             SlotSet("survey_active", False),
-            SlotSet("should_continue", False),
+            SlotSet("questions_queue", []),
+            SlotSet("answers_collected", {}),
+            SlotSet("questions_asked_count", 0),
+            SlotSet("current_question_idx", 0),
+            SlotSet("prediction_confidence", 0.0),
+            SlotSet("predicted_major", None),
+            SlotSet("survey_stage", "profiling"),
+            SlotSet("should_continue", True),
             SlotSet("answer_value", None),
             SlotSet("last_processed_message_id", None),
         ]

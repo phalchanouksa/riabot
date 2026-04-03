@@ -540,7 +540,7 @@ body {
 .message-bubble {
   padding: 1rem;
   border-radius: 1.5rem;
-  max-width: 70%;
+  max-width: 72%;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -580,6 +580,10 @@ body {
   width: 100%;
   padding: 0;
   background: transparent;
+}
+
+.message-bubble.survey-bubble {
+  max-width: min(88%, 720px);
 }
 
 .university-results-card {
@@ -776,6 +780,154 @@ body {
   padding-left: 1rem;
   border: 1px solid var(--border);
   transition: border-color 0.2s;
+}
+
+.survey-progress-panel {
+  margin-bottom: 0.85rem;
+  padding: 0.95rem 1rem;
+  border-radius: 1.1rem;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, var(--surface)) 0%, var(--surface) 100%);
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.survey-progress-kicker {
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.survey-progress-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+  align-items: center;
+}
+
+.survey-progress-meta strong,
+.survey-progress-meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.9rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 82%, var(--primary) 18%);
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+.survey-progress-copy p {
+  margin-top: 0.65rem;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.survey-progress-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.survey-progress-step {
+  position: relative;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.survey-progress-step.active {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 10px 20px -14px color-mix(in srgb, var(--primary) 70%, transparent);
+}
+
+.interactive-btn {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: none;
+}
+
+.message-buttons {
+  margin-top: 0.85rem;
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.message-buttons.survey-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.survey-choice-btn {
+  min-height: 2.7rem;
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+  color: var(--text);
+  font-weight: 700;
+}
+
+.survey-choice-btn:hover {
+  background: color-mix(in srgb, var(--primary) 18%, var(--surface));
+}
+
+.nav-chip-btn {
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 82%, var(--primary) 18%);
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.nav-chip-btn:hover {
+  background: color-mix(in srgb, var(--surface) 68%, var(--primary) 32%);
+}
+
+.typing-effect {
+  position: relative;
+}
+
+.typing-effect.is-typing::after {
+  content: '';
+  display: inline-block;
+  width: 0.45rem;
+  height: 1.05em;
+  margin-left: 0.2rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--primary) 0%, var(--primary-2) 100%);
+  vertical-align: text-bottom;
+  animation: typingCursorBlink 0.8s steps(1, end) infinite;
+}
+
+.typing-effect.is-complete::after {
+  content: none;
+}
+
+@keyframes typingCursorBlink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+
+  46%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .chat-input:focus-within {
@@ -1443,6 +1595,18 @@ body {
 }
 
 @media (max-width: 768px) {
+  .message-bubble {
+    max-width: 84%;
+  }
+
+  .message-buttons.survey-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .survey-progress-steps {
+    grid-template-columns: 1fr;
+  }
+
   .auth-glass-card {
     width: 95%;
     padding: 2rem;

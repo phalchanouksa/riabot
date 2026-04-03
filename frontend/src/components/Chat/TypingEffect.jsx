@@ -1,56 +1,89 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
-const STEP_INTERVAL_MS = 18;
-const MIN_STEPS = 12;
-const MAX_STEPS = 48;
-const INSTANT_TEXT_LENGTH = 24;
+const BASE_STEP_DELAY_MS = 14;
+const PUNCTUATION_DELAY_MS = 38;
+const INSTANT_TEXT_LENGTH = 10;
+const LONG_TEXT_THRESHOLD = 120;
+const MEDIUM_TEXT_THRESHOLD = 72;
+const SHORT_TEXT_THRESHOLD = 28;
 
 const TypingEffect = ({ fullText, onComplete }) => {
   const [displayedText, setDisplayedText] = useState('');
+  const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
     const text = fullText || '';
+    let timeoutId;
+    let currentIndex = 0;
+    let cancelled = false;
+
+    const finishTyping = () => {
+      if (cancelled) return;
+      setDisplayedText(text);
+      setIsComplete(true);
+      if (onComplete) onComplete();
+    };
 
     if (!text) {
       setDisplayedText('');
+      setIsComplete(true);
       if (onComplete) onComplete();
-      return;
+      return undefined;
     }
-
-    if (text.length <= INSTANT_TEXT_LENGTH) {
-      setDisplayedText(text);
-      if (onComplete) onComplete();
-      return;
-    }
-
-    let currentIndex = 0;
-    const targetSteps = Math.max(
-      MIN_STEPS,
-      Math.min(MAX_STEPS, Math.ceil(text.length / 4))
-    );
-    const charsPerStep = Math.max(1, Math.ceil(text.length / targetSteps));
 
     setDisplayedText('');
+    setIsComplete(false);
 
-    const intervalId = window.setInterval(() => {
-      currentIndex = Math.min(text.length, currentIndex + charsPerStep);
+    if (text.length <= INSTANT_TEXT_LENGTH) {
+      finishTyping();
+      return undefined;
+    }
+
+    const getChunkSize = () => {
+      const remaining = text.length - currentIndex;
+      if (remaining > LONG_TEXT_THRESHOLD) return 7;
+      if (remaining > MEDIUM_TEXT_THRESHOLD) return 6;
+      if (remaining > SHORT_TEXT_THRESHOLD) return 4;
+      return 2;
+    };
+
+    const scheduleNextStep = () => {
+      if (cancelled) return;
+
+      currentIndex = Math.min(text.length, currentIndex + getChunkSize());
       setDisplayedText(text.slice(0, currentIndex));
 
       if (currentIndex >= text.length) {
-        window.clearInterval(intervalId);
-        if (onComplete) onComplete();
+        finishTyping();
+        return;
       }
-    }, STEP_INTERVAL_MS);
 
-    return () => window.clearInterval(intervalId);
+      const trailingChar = text[currentIndex - 1] || '';
+      const isPunctuationPause = /[.,!?;:។៖]/.test(trailingChar);
+      const delay = isPunctuationPause ? PUNCTUATION_DELAY_MS : BASE_STEP_DELAY_MS;
+      timeoutId = window.setTimeout(scheduleNextStep, delay);
+    };
+
+    timeoutId = window.setTimeout(scheduleNextStep, BASE_STEP_DELAY_MS);
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
   }, [fullText, onComplete]);
 
   const memoizedMarkdown = useMemo(() => (
     <ReactMarkdown>{displayedText}</ReactMarkdown>
   ), [displayedText]);
 
-  return memoizedMarkdown;
+  return (
+    <div className={`typing-effect ${isComplete ? 'is-complete' : 'is-typing'}`}>
+      {memoizedMarkdown}
+    </div>
+  );
 };
 
 export default TypingEffect;

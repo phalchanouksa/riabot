@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -13,6 +13,7 @@ import ProfileEditModal from '../Profile/ProfileEditModal';
 
 const CHAT_LOG_CHEAT_CODE = 'copyallchat';
 const CHEAT_CODE_TIMEOUT_MS = 1500;
+const SURVEY_QUESTION_PATTERN = /^សំណួរទី\s*(\d+):\s*([^\n]+)/m;
 
 const mapStoredMessageToUiMessage = (message) => {
   const metadata = message.metadata || {};
@@ -23,6 +24,39 @@ const mapStoredMessageToUiMessage = (message) => {
     buttons: metadata.buttons || null,
     type: message.message_type === 'user' ? 'user' : 'bot',
     timestamp: message.timestamp ? new Date(message.timestamp) : new Date(),
+  };
+};
+
+const isNumericSurveyButtons = (buttons) =>
+  Array.isArray(buttons) &&
+  buttons.length > 0 &&
+  buttons.every((button) => /^-?\d+$/.test(String(button?.title ?? '').trim()));
+
+const parseSurveyMessage = (message) => {
+  if (message?.type !== 'bot') {
+    return null;
+  }
+
+  const content = message.content || '';
+  const match = content.match(SURVEY_QUESTION_PATTERN);
+
+  if (!match || !isNumericSurveyButtons(message.buttons)) {
+    return null;
+  }
+
+  const number = Number(match[1]);
+  const prompt = match[2]?.trim() || '';
+  const isSkillQuestion = content.includes('0-3');
+  const filledStages = number >= 17 ? 3 : number >= 9 ? 2 : 1;
+  const phaseLabel = number >= 17 ? 'កំពុងស្នើលទ្ធផល' : number >= 9 ? 'កំពុងបង្រួមជម្រើស' : 'កំពុងស្វែងយល់';
+
+  return {
+    number,
+    prompt,
+    kind: isSkillQuestion ? 'skill' : 'interest',
+    kindLabel: isSkillQuestion ? 'ផ្នែកជំនាញ' : 'ផ្នែកចំណាប់អារម្មណ៍',
+    phaseLabel,
+    filledStages,
   };
 };
 
@@ -46,6 +80,11 @@ const ChatInterface = () => {
   const [sessionId, setSessionId] = useState(null);
   const cheatBufferRef = useRef('');
   const cheatLastKeyTimeRef = useRef(0);
+
+  const activeSurveyQuestion = useMemo(() => {
+    const latestBotMessage = [...messages].reverse().find((message) => message.type === 'bot');
+    return latestBotMessage ? parseSurveyMessage(latestBotMessage) : null;
+  }, [messages]);
 
   useEffect(() => {
     document.documentElement.lang = i18n.language;
@@ -87,11 +126,9 @@ const ChatInterface = () => {
 
       const botResponses = Array.isArray(response?.bot_responses) ? response.bot_responses : [];
       if (botResponses.length > 0) {
-        botResponses.forEach((botResponse, index) => {
-          setTimeout(() => {
-            const botMessage = mapStoredMessageToUiMessage(botResponse);
-            setMessages(prev => [...prev, botMessage]);
-          }, index * 120);
+        const nextMessages = botResponses.map(mapStoredMessageToUiMessage);
+        startTransition(() => {
+          setMessages(prev => [...prev, ...nextMessages]);
         });
       }
 
@@ -271,6 +308,7 @@ const ChatInterface = () => {
           loading={loading}
           onSendMessage={handleSendMessage}
           messages={messages}
+          activeSurveyQuestion={activeSurveyQuestion}
         />
       </div>
 

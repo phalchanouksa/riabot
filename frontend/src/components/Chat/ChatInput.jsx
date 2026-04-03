@@ -1,12 +1,15 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
+const SEGMENT_LABELS = ['ស្វែងយល់', 'បង្រួមជម្រើស', 'ស្នើលទ្ធផល'];
+
 const ChatInput = ({ 
   inputMessage, 
   setInputMessage, 
   loading, 
   onSendMessage, 
-  messages 
+  messages,
+  activeSurveyQuestion = null
 }) => {
   const { t } = useTranslation();
 
@@ -19,6 +22,30 @@ const ChatInput = ({
 
   return (
     <div className={`chat-input-area ${messages.length === 0 ? 'centered' : 'bottom'}`}>
+      {activeSurveyQuestion && (
+        <div className="survey-progress-panel">
+          <div className="survey-progress-copy">
+            <span className="survey-progress-kicker">កំពុងធ្វើតេស្តណែនាំជំនាញ</span>
+            <div className="survey-progress-meta">
+              <strong>សំណួរទី {activeSurveyQuestion.number}</strong>
+              <span>{activeSurveyQuestion.kindLabel}</span>
+              <span>{activeSurveyQuestion.phaseLabel}</span>
+            </div>
+            <p>{activeSurveyQuestion.prompt}</p>
+          </div>
+          <div className="survey-progress-steps" aria-hidden="true">
+            {SEGMENT_LABELS.map((label, index) => (
+              <div
+                key={label}
+                className={`survey-progress-step ${index < activeSurveyQuestion.filledStages ? 'active' : ''}`}
+              >
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="chat-input">
         <textarea
           placeholder={t('enterPrompt')}
